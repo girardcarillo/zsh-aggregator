@@ -61,8 +61,8 @@ $ source ~/.zshrc
 antigen-bundle xgarrido/zsh-aggregator
 ```
 
-How to use
-----------
+How to use (to be done)
+-----------------------
 
 Type `aggregator` and press `TAB` key. You will be prompt to
 something like this
