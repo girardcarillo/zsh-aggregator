@@ -21,6 +21,7 @@ _aggregator_aliasmap=(
 _aggregator_components=(
     all
     bayeux
+    cadfael
     channel
     falaise
     chevreuse

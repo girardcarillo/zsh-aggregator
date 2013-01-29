@@ -4,7 +4,7 @@
 #
 # Author: garrido@lal.in2p3.fr
 # Keywords: snailware, supernemo
-# Requirements: pkgtools
+# Requirements: pkgtools, go-svn2git
 # Status: not intended to be distributed yet
 
 # Aggregator bundles
