@@ -120,6 +120,9 @@ function aggregator ()
             return 1
         fi
 
+        # Set aggregator
+        __aggregator_set_${icompo}
+
         # Look for the corresponding directory
         pkgtools__msg_devel "repository=${SNAILWARE_PRO_DIR}/${icompo}/repo"
         local is_found=0
@@ -136,9 +139,6 @@ function aggregator ()
             return 0
         fi
         unset is_found
-
-        # Set aggregator
-        __aggregator_set_${icompo}
 
         case ${mode} in
             git-checkout)
