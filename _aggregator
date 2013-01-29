@@ -1,0 +1,208 @@
+#compdef aggregator
+
+# Global variables; setup the first time _aggregator is called.
+# For $_aggregator_commands[] generation, see the very end of this file.
+typeset -ga _aggregator_commands _aggregator_aliases
+typeset -gA _aggregator_aliasmap
+typeset -ga _aggregator_components
+
+_aggregator_aliasmap=(
+    setup  setup
+    conf   configure
+    build  build
+    reset  reset
+    test   test
+    git-co git-checkout
+    git-up git-update
+    go     goto
+    env    environment
+)
+
+_aggregator_components=(
+    all
+    bayeux
+    channel
+    falaise
+    chevreuse
+)
+
+# --- Sub-command functions ---
+# These *must* be called _aggregator-*(); The description generation relies on
+# them being names that way. *No* other functions may match that pattern.
+# Other utility functions should be named __aggregator-*() (see below).
+#
+# Another thing, the description generation needs, is handling of
+# $aggregator_describe: If that parameter is non-empty, the sub-command function
+# should only print a description of the sub-command it handles and return
+# immidiately after doing so.
+#
+# To add support for a new sub-command, you only have to add a new
+# _aggregator-<foo>() function below (preferably alphabetically sorted), that
+# behaves like described above; and add a alias->command pair in the
+# _aggregator_aliasmap associative array above (if the comand in fact has an
+# alias). The rest should just work[tm].
+
+function _aggregator-build ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Build a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-configure ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Configure a component" && return
+    local -a args
+    args=(
+        '--with-test[build with test (default)]'
+        '--without-test[do not build test programs]'
+        '--with-doc[build documentation]'
+        '--without-doc[do not build documentation (default)]'
+        '*:: :->'
+    )
+    _arguments ${args} && return
+    __aggregator-choose-component
+}
+
+function _aggregator-goto ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Goto a component directory" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-rebuild ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Rebuild component from scratch" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-reset ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Reset component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-setup ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Source a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-status ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Status of a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-git-checkout ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Git-svn checkout a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-git-update ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Git-svn update a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-test ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Run tests on a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-environment ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Set environment" && return
+}
+
+# --- Utility functions ---
+# They should be called __aggregator-*() and kept seperate from the
+# sub-command functions.
+
+function __aggregator-choose-component ()
+{
+    _describe -t _aggregator_components 'SN@ilWare option' _aggregator_components
+}
+
+# And here is the actual _aggregator(), that puts it all together:
+function _aggregator() {
+    local curcontext="${curcontext}"
+    local mode state ret
+    local -a args
+    local -x aggregatorcommand
+    unset aggregator_describe
+
+    args=(
+        '-h[print help]'
+        '-d[debug mode]'
+        '-D[devel mode]'
+        '-v[verbose mode]'
+        '-q[quiet mode]'
+        '-i[interactive]'
+        '-b[batch]'
+        '-g[GUI mode]'
+        '*:: :->subcommand_or_options'
+    )
+    _arguments -C -s -w ${args} && return
+
+    if [[ ${state} == "subcommand_or_options" ]]; then
+        if (( CURRENT == 1 )) ; then
+            zstyle -s ":completion:${curcontext}:subcommands" mode mode || mode='commands'
+            if [[ ${mode} == 'commands' ]]; then
+                _describe -t subcommands 'aggregator commands' _aggregator_commands
+            elif [[ ${mode} == 'aliases' ]]; then
+                _describe -t subcommands 'aggregator aliases' _aggregator_aliases
+            else
+                _describe -t subcommands 'aggregator commands and aliases' _aggregator_commands -- _aggregator_aliases
+            fi
+        else
+            if (( ${+functions[aggregator]} == 0 )); then
+                _message '`aggregator'\'' not found in $path; sub-cmd completions disabled.'
+                return 0
+            fi
+            aggregatorcommand="${words[1]}"
+            if [[ -n ${_aggregator_aliasmap[$aggregatorcommand]} ]] ; then
+                aggregatorcommand="${_aggregator_aliasmap[$aggregatorcommand]}"
+            fi
+            if ! (( ${+functions[_aggregator-$aggregatorcommand]} )); then
+              local low high
+              low=$_aggregator_commands[(i)$aggregatorcommand*]
+              high=$_aggregator_commands[(I)$aggregatorcommand*]
+              if (( low == high )); then
+                aggregatorcommand=${_aggregator_commands[low]%%:*}
+              elif (( low < high )); then
+                _message -e "Ambiguous command $aggregatorcommand"
+              else
+                _message -e "Subcommand $aggregatorcommand not known"
+              fi
+            fi
+            curcontext="${curcontext%:*:*}:aggregator-${aggregatorcommand}:"
+            _call_function ret _aggregator-${aggregatorcommand}
+        fi
+    fi
+}
+
+# description generation follows; only done on 1st _aggregator call.
+local f desc
+local -A rev
+local -x aggregator_describe
+aggregator_describe='yes, please'
+for f in ${(k)_aggregator_aliasmap} ; do
+    rev+=( ${_aggregator_aliasmap[$f]} $f )
+done
+for f in ${(M)${(k)functions}:#_aggregator-*} ; do
+    desc="$($f)"
+    _aggregator_commands+=( "${f#_aggregator-}${desc:+:$desc}" )
+    [[ -n ${rev[${f#_aggregator-}]} ]] && _aggregator_aliases+=( "${rev[${f#_aggregator-}]}${desc:+:$desc}" )
+done
+unset desc f rev aggregator_describe
+
+_aggregator
+
+# Local Variables:
+# mode: Shell-Script
+# sh-indentation: 2
+# indent-tabs-mode: nil
+# sh-basic-offset: 2
+# End:

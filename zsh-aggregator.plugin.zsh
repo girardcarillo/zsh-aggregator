@@ -70,11 +70,7 @@ function aggregator ()
                 mode="test"
             elif [ "${token}" = "svn-diff" ]; then
                 mode="svn-diff"
-            elif [ "${token}" = "svn-checkout" ]; then
-                mode="svn-checkout"
-            elif [ "${token}" = "svn-update" ]; then
-                mode="svn-update"
-            elif [ "${token}" = "git-checkout" ]; then
+             elif [ "${token}" = "git-checkout" ]; then
                 mode="git-checkout"
             elif [ "${token}" = "git-update" ]; then
                 mode="git-update"
@@ -145,13 +141,9 @@ function aggregator ()
         __aggregator_set_${icompo}
 
         case ${mode} in
-            svn-update)
-                pkgtools__msg_notice "Updating '${icompo}' aggregator"
-                svn up
-                if [ $? -ne 0 ]; then
-                    pkgtools__msg_error "Updating '${icompo}' aggregator fails !"
-                    break
-                fi
+            git-checkout)
+                pkgtools__msg_notice "Getting '${icompo}' aggregator"
+                __aggregator_get_${icompo}
                 ;;
             git-update)
                 pkgtools__msg_notice "Updating '${icompo}' aggregator"
@@ -190,14 +182,6 @@ function aggregator ()
                 pkgtools__msg_notice "Testing '${icompo}' aggregator"
                 ./pkgtools.d/pkgtool test
                  ;;
-            svn-status)
-                pkgtools__msg_notice "SVN status '${icompo}' aggregator"
-                svnstatus
-                ;;
-            svn-diff)
-                pkgtools__msg_notice "SVN diff '${icompo}' aggregator"
-                svndiff
-                ;;
         esac
 
         popd > /dev/null 2>&1
@@ -277,8 +261,6 @@ function __aggregator_source ()
 {
     __pkgtools__at_function_enter __aggregator_source
 
-    pkgtools__msg_notice "Source '${aggregator_name}' aggregator"
-
     local upname=${aggregator_name:u}
     local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
     export ${upname}_PREFIX=${install_dir}
@@ -327,8 +309,6 @@ function __aggregator_unsource ()
 {
     __pkgtools__at_function_enter __aggregator_unsource
 
-    pkgtools__msg_notice "Un-source '${aggregator_name}' aggregator"
-
     local upname=${aggregator_name:u}
     local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
     unset ${upname}_PREFIX
@@ -365,6 +345,8 @@ function __aggregator_set ()
 {
     __pkgtools__at_function_enter __aggregator_set
 
+    __aggregator_environment
+
     aggregator_logfile=/tmp/${aggregator_name}_${aggregator_branch_name}.log
     aggregator_base_dir=${SNAILWARE_PRO_DIR}/${aggregator_name}
 
@@ -382,7 +364,6 @@ function __aggregator_get ()
 {
     __pkgtools__at_function_enter __aggregator_get
 
-    pkgtools__msg_notice "Getting/updating ${aggregator_name}"
     go-svn2git -username garrido -verbose ${aggregator_svn_path}
     git checkout ${aggregator_branch_name}
 
@@ -394,7 +375,6 @@ function __aggregator_build ()
 {
     __pkgtools__at_function_enter __aggregator_build
 
-    pkgtools__msg_notice "Configure ${aggregator_name}"
     ./pkgtools.d/pkgtool configure                                                    \
         --install-prefix     ${aggregator_base_dir}/install/${aggregator_branch_name} \
         --ep-build-directory ${aggregator_base_dir}/build/${aggregator_branch_name}   \
@@ -402,7 +382,6 @@ function __aggregator_build ()
         --config             ${aggregator_config_version}                             \
         ${aggregator_options} | tee -a ${aggregator_logfile} 2>&1
 
-    pkgtools__msg_notice "Build/install ${aggregator_name}"
     ./pkgtools.d/pkgtool install | tee -a ${aggregator_logfile} 2>&1
 
     __pkgtools__at_function_exit
@@ -413,7 +392,6 @@ function __aggregator_remove ()
 {
     __pkgtools__at_function_enter __aggregator_remove
 
-    pkgtools__msg_notice "Remove ${aggregator_name}"
     echo y | ./pkgtools.d/pkgtool reset | tee -a ${aggregator_logfile} 2>&1
 
     rm -rf ${aggregator_base_dir}/{install,build}
@@ -422,12 +400,24 @@ function __aggregator_remove ()
     return 0
 }
 
+function __aggregator_dump ()
+{
+    __pkgtools__at_function_enter __aggregator_dump
+
+    pkgtools__msg_notice "Dump aggregator"
+    pkgtools__msg_notice " |- name : ${aggregator_name}"
+    pkgtools__msg_notice " |- branch : ${aggregator_branch_name}"
+    pkgtools__msg_notice " |- repository : ${aggregator_svn_path}"
+    pkgtools__msg_notice " |- options : ${aggregator_options}"
+    pkgtools__msg_notice " \`- install dir. : ${aggregator_base_dir}"
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
 function __aggregator_set_cadfael
 {
     __pkgtools__at_function_enter __aggregator_set_cadfael
-
-    # Setting paths
-    __aggregator_environment
 
     aggregator_name="cadfael"
     aggregator_branch_name="master"
@@ -495,6 +485,17 @@ function __aggregator_build_cadfael ()
     return 0
 }
 
+function __aggregator_dump_cadfael ()
+{
+    __pkgtools__at_function_enter __aggregator_dump_cadfael
+
+    __aggregator_set_cadfael
+    __aggregator_dump
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
 function __aggregator_set_bayeux ()
 {
     __pkgtools__at_function_enter __aggregator_set_bayeux
@@ -552,12 +553,22 @@ function __aggregator_build_bayeux ()
     __pkgtools__at_function_enter __aggregator_build_bayeux
 
     (
-        __aggregator_environment
         __aggregator_source_cadfael
         __aggregator_set_bayeux
         __aggregator_get
         __aggregator_build
     )
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_dump_bayeux ()
+{
+    __pkgtools__at_function_enter __aggregator_dump_bayeux
+
+    __aggregator_set_bayeux
+    __aggregator_dump
 
     __pkgtools__at_function_exit
     return 0
@@ -619,12 +630,22 @@ function __aggregator_build_channel ()
     __pkgtools__at_function_enter __aggregator_build_channel
 
     (
-        __aggregator_environment
         __aggregator_source_cadfael
         __aggregator_set_channel
         __aggregator_get
         __aggregator_build
     )
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_dump_channel ()
+{
+    __pkgtools__at_function_enter __aggregator_dump_channel
+
+    __aggregator_set_channel
+    __aggregator_dump
 
     __pkgtools__at_function_exit
     return 0
@@ -687,7 +708,6 @@ function __aggregator_build_falaise ()
     __pkgtools__at_function_enter __aggregator_build_falaise
 
     (
-        __aggregator_environment
         __aggregator_source_cadfael
         __aggregator_source_bayeux
         __aggregator_source_channel
@@ -695,6 +715,17 @@ function __aggregator_build_falaise ()
         __aggregator_get
         __aggregator_build
     )
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_dump_falaise ()
+{
+    __pkgtools__at_function_enter __aggregator_dump_falaise
+
+    __aggregator_set_falaise
+    __aggregator_dump
 
     __pkgtools__at_function_exit
     return 0
@@ -755,7 +786,6 @@ function __aggregator_build_chevreuse ()
     __pkgtools__at_function_enter __aggregator_build_chevreuse
 
     (
-        __aggregator_environment
         __aggregator_source_cadfael
         __aggregator_source_bayeux
         __aggregator_source_falaise
@@ -763,6 +793,17 @@ function __aggregator_build_chevreuse ()
         __aggregator_get
         __aggregator_build
     )
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_dump_chevreuse ()
+{
+    __pkgtools__at_function_enter __aggregator_dump_chevreuse
+
+    __aggregator_set_chevreuse
+    __aggregator_dump
 
     __pkgtools__at_function_exit
     return 0
