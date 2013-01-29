@@ -61,8 +61,8 @@ $ source ~/.zshrc
 antigen-bundle xgarrido/zsh-aggregator
 ```
 
-How to use (to be done)
------------------------
+How to use
+----------
 
 Type `aggregator` and press `TAB` key. You will be prompt to
 something like this
@@ -71,15 +71,14 @@ something like this
 ➜  aggregator
 build         -- Build a component
 configure     -- Configure a component
+environment   -- Set environment
+git-checkout  -- Git-svn checkout a component
+git-update    -- Git-svn update a component
 goto          -- Goto a component directory
 rebuild       -- Rebuild component from scratch
 reset         -- Reset component
 setup         -- Source a component
 status        -- Status of a component
-svn-checkout  -- SVN checkout a component
-svn-diff      -- SVN diff a component
-svn-status    -- SVN status of a component
-svn-update    -- SVN update a component
 test          -- Run tests on a component
 ```
 
