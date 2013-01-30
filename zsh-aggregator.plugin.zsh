@@ -15,6 +15,7 @@ declare -g aggregator_name
 declare -g aggregator_svn_path
 declare -g aggregator_branch_name
 declare -g aggregator_base_dir
+declare -g aggregator_build_dir
 declare -g aggregator_logfile
 declare -g aggregator_options
 declare -g aggregator_config_version
@@ -256,10 +257,12 @@ function __aggregator_environment ()
             ;;
     esac
 
-    pkgtools__set_variable SNAILWARE_BASE_DIR "${nemo_base_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_PRO_DIR  "${nemo_pro_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_DEV_DIR  "${nemo_dev_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_SIM_DIR  "${nemo_simulation_dir_tmp}"
+    # Export only if it is not already exported
+    pkgtools__set_variable SNAILWARE_BASE_DIR  "${nemo_base_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_PRO_DIR   "${nemo_pro_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_DEV_DIR   "${nemo_dev_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_SIM_DIR   "${nemo_simulation_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_BUILD_DIR "${nemo_pro_dir_tmp}"
 
     # Export main env. variables
     which ccache > /dev/null 2>&1
@@ -364,6 +367,7 @@ function __aggregator_set ()
 
     aggregator_logfile=/tmp/${aggregator_name}_${aggregator_branch_name}.log
     aggregator_base_dir=${SNAILWARE_PRO_DIR}/${aggregator_name}
+    aggregator_build_dir=${SNAILWARE_BUILD_DIR}/${aggregator_name}
 
     if [ ! -d  ${aggregator_base_dir}/repo ]; then
         pkgtools__msg_warning "${aggregator_base_dir}/repo directory not created"
@@ -402,8 +406,8 @@ function __aggregator_build ()
 
     ./pkgtools.d/pkgtool configure                                                    \
         --install-prefix     ${aggregator_base_dir}/install/${aggregator_branch_name} \
-        --ep-build-directory ${aggregator_base_dir}/build/${aggregator_branch_name}   \
-        --download-directory ${aggregator_base_dir}/download                          \
+        --ep-build-directory ${aggregator_build_dir}/build/${aggregator_branch_name}  \
+        --download-directory ${aggregator_build_dir}/download                         \
         --config             ${aggregator_config_version}                             \
         ${aggregator_options} | tee -a ${aggregator_logfile} 2>&1
     if [ $? -ne 0 ]; then
@@ -441,11 +445,12 @@ function __aggregator_dump ()
     __pkgtools__at_function_enter __aggregator_dump
 
     pkgtools__msg_notice "Dump aggregator"
-    pkgtools__msg_notice " |- name : ${aggregator_name}"
-    pkgtools__msg_notice " |- branch : ${aggregator_branch_name}"
-    pkgtools__msg_notice " |- repository : ${aggregator_svn_path}"
-    pkgtools__msg_notice " |- options : ${aggregator_options}"
-    pkgtools__msg_notice " \`- install dir. : ${aggregator_base_dir}"
+    pkgtools__msg_notice " |- name         : ${aggregator_name}"
+    pkgtools__msg_notice " |- branch       : ${aggregator_branch_name}"
+    pkgtools__msg_notice " |- repository   : ${aggregator_svn_path}"
+    pkgtools__msg_notice " |- options      : ${aggregator_options}"
+    pkgtools__msg_notice " |- install dir. : ${aggregator_base_dir}"
+    pkgtools__msg_notice " \`- build dir.  : ${aggregator_build_dir}"
 
     __pkgtools__at_function_exit
     return 0
