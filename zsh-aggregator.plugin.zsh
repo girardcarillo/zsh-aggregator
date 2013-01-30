@@ -144,6 +144,10 @@ function aggregator ()
             git-checkout)
                 pkgtools__msg_notice "Getting '${icompo}' aggregator"
                 __aggregator_get_${icompo}
+                if [ $? -ne 0 ]; then
+                    pkgtools__msg_error "Getting '${icompo}' aggregator fails !"
+                    break
+                fi
                 ;;
             git-update)
                 pkgtools__msg_notice "Updating '${icompo}' aggregator"
@@ -157,6 +161,10 @@ function aggregator ()
             setup)
                 pkgtools__msg_notice "Sourcing '${icompo}' aggregator"
                 __aggregator_source_${icompo}
+                if [ $? -ne 0 ]; then
+                    pkgtools__msg_error "Sourcing '${icompo}' aggregator fails !"
+                    break
+                fi
                 ;;
             configure)
                 pkgtools__msg_notice "Configuring '${icompo}' aggregator"
@@ -165,11 +173,19 @@ function aggregator ()
             build)
                 pkgtools__msg_notice "Building '${icompo}' aggregator"
                 __aggregator_build_${icompo}
-                ;;
+                if [ $? -ne 0 ]; then
+                    pkgtools__msg_error "Building '${icompo}' aggregator fails !"
+                    break
+                fi
+              ;;
             reset)
                 pkgtools__msg_notice "Reseting '${icompo}' aggregator"
                 __aggregator_unsource_${icompo}
                 __aggregator_remove_${icompo}
+                if [ $? -ne 0 ]; then
+                    pkgtools__msg_error "Reseting '${icompo}' aggregator fails !"
+                    break
+                fi
                 ;;
             rebuild)
                 pkgtools__msg_notice "Rebuilding '${icompo}' aggregator"
