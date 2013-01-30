@@ -829,6 +829,7 @@ function __aggregator_build_chevreuse ()
     (
         __aggregator_source_cadfael
         __aggregator_source_bayeux
+        __aggregator_source_channel
         __aggregator_source_falaise
         __aggregator_set_chevreuse
         __aggregator_get
