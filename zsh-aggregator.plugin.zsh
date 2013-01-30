@@ -240,11 +240,10 @@ function __aggregator_environment ()
             ;;
     esac
 
-
-    export SNAILWARE_BASE_DIR="${nemo_base_dir_tmp}"
-    export SNAILWARE_PRO_DIR="${nemo_pro_dir_tmp}"
-    export SNAILWARE_DEV_DIR="${nemo_dev_dir_tmp}"
-    export SNSW_SIMULATION_DIR="${nemo_simulation_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_BASE_DIR "${nemo_base_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_PRO_DIR  "${nemo_pro_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_DEV_DIR  "${nemo_dev_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_SIM_DIR  "${nemo_simulation_dir_tmp}"
 
     # Export main env. variables
     which ccache > /dev/null 2>&1
