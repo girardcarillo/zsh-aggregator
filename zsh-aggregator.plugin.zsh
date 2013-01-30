@@ -380,7 +380,17 @@ function __aggregator_get ()
     __pkgtools__at_function_enter __aggregator_get
 
     go-svn2git -username garrido -verbose ${aggregator_svn_path}
+    if [ $? -ne 0 ]; then
+        pkgtools__msg_error "Checking fails!"
+        __pkgtools__at_function_exit
+        return 1
+    fi
     git checkout ${aggregator_branch_name}
+    if [ $? -ne 0 ]; then
+        pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
+        __pkgtools__at_function_exit
+        return 1
+    fi
 
     __pkgtools__at_function_exit
     return 0
@@ -396,8 +406,19 @@ function __aggregator_build ()
         --download-directory ${aggregator_base_dir}/download                          \
         --config             ${aggregator_config_version}                             \
         ${aggregator_options} | tee -a ${aggregator_logfile} 2>&1
+    if [ $? -ne 0 ]; then
+        pkgtools__msg_error "Configuration fails!"
+        __pkgtools__at_function_exit
+        return 1
+    fi
+
 
     ./pkgtools.d/pkgtool install | tee -a ${aggregator_logfile} 2>&1
+    if [ $? -ne 0 ]; then
+        pkgtools__msg_error "Installation fails!"
+        __pkgtools__at_function_exit
+        return 1
+    fi
 
     __pkgtools__at_function_exit
     return 0
