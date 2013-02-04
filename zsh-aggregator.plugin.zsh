@@ -11,15 +11,6 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux channel falaise chevreuse)
 
-declare -g aggregator_name
-declare -g aggregator_svn_path
-declare -g aggregator_branch_name
-declare -g aggregator_base_dir
-declare -g aggregator_build_dir
-declare -g aggregator_logfile
-declare -g aggregator_options
-declare -g aggregator_config_version
-
 function aggregator ()
 {
     __pkgtools__default_values
@@ -71,8 +62,10 @@ function aggregator ()
                 mode="test"
             elif [ "${token}" = "svn-diff" ]; then
                 mode="svn-diff"
-             elif [ "${token}" = "git-checkout" ]; then
-                mode="git-checkout"
+            elif [ "${token}" = "checkout" ]; then
+                mode="checkout"
+            elif [ "${token}" = "dump" ]; then
+                mode="dump"
             elif [ "${token}" = "git-update" ]; then
                 mode="git-update"
             elif [ "${token}" = "goto" ]; then
@@ -142,7 +135,7 @@ function aggregator ()
         unset is_found
 
         case ${mode} in
-            git-checkout)
+            checkout)
                 pkgtools__msg_notice "Getting '${icompo}' aggregator"
                 __aggregator_get_${icompo}
                 if [ $? -ne 0 ]; then
@@ -178,7 +171,15 @@ function aggregator ()
                     pkgtools__msg_error "Building '${icompo}' aggregator fails !"
                     break
                 fi
-              ;;
+                ;;
+            dump)
+                pkgtools__msg_notice "Dumping '${icompo}' aggregator"
+                __aggregator_dump_${icompo}
+                if [ $? -ne 0 ]; then
+                    pkgtools__msg_error "Dumping '${icompo}' aggregator fails !"
+                    break
+                fi
+                ;;
             reset)
                 pkgtools__msg_notice "Reseting '${icompo}' aggregator"
                 __aggregator_unsource_${icompo}
@@ -228,19 +229,21 @@ function __aggregator_environment ()
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
+            nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
             ;;
         pc-91089)
             nemo_base_dir_tmp="/data/workdir/nemo/"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
+            nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
             ;;
         lx3.lal.in2p3.fr|nemo*.lal.in2p3.fr)
             nemo_base_dir_tmp="/exp/nemo/snsw"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             nemo_dev_dir_tmp="/exp/nemo/${USER}/workdir/supernemo/development"
             nemo_simulation_dir_tmp="/scratch/${USER}/simulations"
-            cadfael_version="0.1.0"
+            nemo_build_dir_tmp="/scratch/${USER}/snware"
             ;;
         ccige*|ccage*)
             nemo_base_dir_tmp="/afs/in2p3.fr/group/nemo"
@@ -254,6 +257,7 @@ function __aggregator_environment ()
             nemo_base_dir_tmp="/home/${USER}/Workdir"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
+            nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
             ;;
     esac
 
@@ -262,7 +266,7 @@ function __aggregator_environment ()
     pkgtools__set_variable SNAILWARE_PRO_DIR   "${nemo_pro_dir_tmp}"
     pkgtools__set_variable SNAILWARE_DEV_DIR   "${nemo_dev_dir_tmp}"
     pkgtools__set_variable SNAILWARE_SIM_DIR   "${nemo_simulation_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_BUILD_DIR "${nemo_pro_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_BUILD_DIR "${nemo_build_dir_tmp}"
 
     # Export main env. variables
     which ccache > /dev/null 2>&1
@@ -383,17 +387,39 @@ function __aggregator_get ()
 {
     __pkgtools__at_function_enter __aggregator_get
 
-    go-svn2git -username garrido -verbose ${aggregator_svn_path}
-    if [ $? -ne 0 ]; then
-        pkgtools__msg_error "Checking fails!"
-        __pkgtools__at_function_exit
-        return 1
-    fi
-    git checkout ${aggregator_branch_name}
-    if [ $? -ne 0 ]; then
-        pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
-        __pkgtools__at_function_exit
-        return 1
+    which go-svn2git > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        pkgtools__msg_notice "Machine has go-svn2git"
+        go-svn2git -username garrido -verbose ${aggregator_svn_path}
+        if [ $? -ne 0 ]; then
+            pkgtools__msg_error "Checking fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+        git checkout ${aggregator_branch_name}
+        if [ $? -ne 0 ]; then
+            pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    else
+        pkgtools__msg_notice "Machine does not have go-svn2git"
+        svn co --username garrido ${aggregator_svn_path} .
+        if [ $? -ne 0 ]; then
+            pkgtools__msg_error "Checking fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+        if [ ${aggregator_branch_name} = master ]; then
+            cd trunk
+        else
+            cd ${aggregator_branch_name}
+        fi
+        if [ $? -ne 0 ]; then
+            pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
     fi
 
     __pkgtools__at_function_exit
@@ -477,6 +503,17 @@ function __aggregator_set_cadfael
     return 0
 }
 
+function __aggregator_get_cadfael ()
+{
+    __pkgtools__at_function_enter __aggregator_get_cadfael
+
+    __aggregator_set_cadfael
+    __aggregator_get
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
 function __aggregator_source_cadfael ()
 {
     __pkgtools__at_function_enter __aggregator_source_cadfael
@@ -554,6 +591,17 @@ function __aggregator_set_bayeux ()
     return 0
 }
 
+function __aggregator_get_bayeux ()
+{
+    __pkgtools__at_function_enter __aggregator_get_bayeux
+
+    __aggregator_set_bayeux
+    __aggregator_get
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
 function __aggregator_source_bayeux ()
 {
     __pkgtools__at_function_enter __aggregator_source_bayeux
@@ -626,6 +674,17 @@ function __aggregator_set_channel ()
     aggregator_options="--with-all \
                         --with-test"
     __aggregator_set
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_get_channel ()
+{
+    __pkgtools__at_function_enter __aggregator_get_channel
+
+    __aggregator_set_channel
+    __aggregator_get
 
     __pkgtools__at_function_exit
     return 0
@@ -709,6 +768,17 @@ function __aggregator_set_falaise ()
     return 0
 }
 
+function __aggregator_get_falaise ()
+{
+    __pkgtools__at_function_enter __aggregator_get_falaise
+
+    __aggregator_set_falaise
+    __aggregator_get
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
 function __aggregator_source_falaise ()
 {
     __pkgtools__at_function_enter __aggregator_source_falaise
@@ -782,6 +852,17 @@ function __aggregator_set_chevreuse ()
     aggregator_options="--with-all  \
                         --with-test"
     __aggregator_set
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_get_chevreuse ()
+{
+    __pkgtools__at_function_enter __aggregator_get_chevreuse
+
+    __aggregator_set_chevreuse
+    __aggregator_get
 
     __pkgtools__at_function_exit
     return 0

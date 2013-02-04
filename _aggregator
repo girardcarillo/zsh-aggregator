@@ -12,10 +12,11 @@ _aggregator_aliasmap=(
     build  build
     reset  reset
     test   test
-    git-co git-checkout
+    co     checkout
     git-up git-update
     go     goto
     env    environment
+    dump   dump
 )
 
 _aggregator_components=(
@@ -94,9 +95,15 @@ function _aggregator-status ()
     __aggregator-choose-component
 }
 
-function _aggregator-git-checkout ()
+function _aggregator-checkout ()
 {
-    [[ -n ${aggregator_describe} ]] && print "Git-svn checkout a component" && return
+    [[ -n ${aggregator_describe} ]] && print "Checkout a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-dump ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Dump a component" && return
     __aggregator-choose-component
 }
 
