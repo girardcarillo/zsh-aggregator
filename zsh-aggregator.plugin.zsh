@@ -20,6 +20,9 @@ declare -g aggregator_logfile
 declare -g aggregator_options
 declare -g aggregator_config_version
 
+# Aliases
+alias do_nemo_setup='aggregator setup cadfael'
+
 function aggregator ()
 {
     __pkgtools__default_values
