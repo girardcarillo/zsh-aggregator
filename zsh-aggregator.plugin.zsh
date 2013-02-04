@@ -11,15 +11,6 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux channel falaise chevreuse)
 
-declare -g aggregator_name
-declare -g aggregator_svn_path
-declare -g aggregator_branch_name
-declare -g aggregator_base_dir
-declare -g aggregator_build_dir
-declare -g aggregator_logfile
-declare -g aggregator_options
-declare -g aggregator_config_version
-
 # Aliases
 alias do_nemo_setup='aggregator setup cadfael'
 
