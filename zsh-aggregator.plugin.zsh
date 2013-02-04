@@ -11,12 +11,9 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux channel falaise chevreuse)
 
-<<<<<<< HEAD
-=======
 # Aliases
 alias do_nemo_setup='aggregator setup cadfael'
 
->>>>>>> 0f3f36c8aa5ecc5abb9f9bf44998f7414ce74950
 function aggregator ()
 {
     __pkgtools__default_values
