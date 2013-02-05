@@ -4,7 +4,7 @@
 #
 # Author: garrido@lal.in2p3.fr
 # Keywords: snailware, supernemo
-# Requirements: pkgtools, go-svn2git
+# Requirements: pkgtools
 # Status: not intended to be distributed yet
 
 # Aggregator bundles
@@ -407,7 +407,9 @@ function __aggregator_get ()
         fi
     else
         pkgtools__msg_notice "Machine does not have go-svn2git"
-        svn co --username garrido ${aggregator_svn_path} .
+        git svn init --prefix=svn/ --username=garrido --trunk=trunk --tags=tags --branches=branches \
+            ${aggregator_svn_path}
+        git svn fetch
         if [ $? -ne 0 ]; then
             pkgtools__msg_error "Checking fails!"
             __pkgtools__at_function_exit
