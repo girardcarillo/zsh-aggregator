@@ -69,8 +69,8 @@ function aggregator ()
                 mode="checkout"
             elif [ "${token}" = "dump" ]; then
                 mode="dump"
-            elif [ "${token}" = "git-update" ]; then
-                mode="git-update"
+            elif [ "${token}" = "update" ]; then
+                mode="update"
             elif [ "${token}" = "goto" ]; then
                 mode="goto"
             else
@@ -146,7 +146,7 @@ function aggregator ()
                     break
                 fi
                 ;;
-            git-update)
+            update)
                 pkgtools__msg_notice "Updating '${icompo}' aggregator"
                 git svn fetch
                 git svn rebase
@@ -249,12 +249,11 @@ function __aggregator_environment ()
             nemo_build_dir_tmp="/scratch/${USER}/snware"
             ;;
         ccige*|ccage*)
-            nemo_base_dir_tmp="/afs/in2p3.fr/group/nemo"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/sw2"
-            nemo_dev_dir_tmp="/sps/nemo/scratch/${USER}/workdir/supernemo/development"
+            nemo_base_dir_tmp="/sps/nemo/scratch/${USER}/workdir"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
+            nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="/sps/nemo/scratch/${USER}/simulations"
-            cadfael_version="0.2.1"
-            cadfael_setup_file="${nemo_pro_dir_tmp}/Cadfael/Cadfael-${cadfael_version}/Install/etc/cadfael_setup.sh"
+            nemo_build_dir_tmp="/scratch/${USER}/snware"
             ;;
         *)
             nemo_base_dir_tmp="/home/${USER}/Workdir"
@@ -372,7 +371,10 @@ function __aggregator_set ()
 
     __aggregator_environment
 
-    aggregator_logfile=/tmp/${aggregator_name}_${aggregator_branch_name}.log
+    if [ ! -d /tmp/${USER} ]; then
+        mkdir -p /tmp/${USER}
+    fi
+    aggregator_logfile=/tmp/${USER}/${aggregator_name}_${aggregator_branch_name}.log
     aggregator_base_dir=${SNAILWARE_PRO_DIR}/${aggregator_name}
     aggregator_build_dir=${SNAILWARE_BUILD_DIR}/${aggregator_name}
 

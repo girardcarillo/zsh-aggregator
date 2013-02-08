@@ -13,7 +13,7 @@ _aggregator_aliasmap=(
     reset  reset
     test   test
     co     checkout
-    git-up git-update
+    up     update
     go     goto
     env    environment
     dump   dump
@@ -107,9 +107,9 @@ function _aggregator-dump ()
     __aggregator-choose-component
 }
 
-function _aggregator-git-update ()
+function _aggregator-update ()
 {
-    [[ -n ${aggregator_describe} ]] && print "Git-svn update a component" && return
+    [[ -n ${aggregator_describe} ]] && print "Update a component" && return
     __aggregator-choose-component
 }
 
