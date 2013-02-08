@@ -399,12 +399,6 @@ function __aggregator_get ()
             __pkgtools__at_function_exit
             return 1
         fi
-        git checkout ${aggregator_branch_name}
-        if [ $? -ne 0 ]; then
-            pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
-            __pkgtools__at_function_exit
-            return 1
-        fi
     else
         pkgtools__msg_notice "Machine does not have go-svn2git"
         git svn init --prefix=svn/ --username=garrido --trunk=trunk --tags=tags --branches=branches \
@@ -415,16 +409,12 @@ function __aggregator_get ()
             __pkgtools__at_function_exit
             return 1
         fi
-        if [ ${aggregator_branch_name} = master ]; then
-            cd trunk
-        else
-            cd ${aggregator_branch_name}
-        fi
-        if [ $? -ne 0 ]; then
-            pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
-            __pkgtools__at_function_exit
-            return 1
-        fi
+    fi
+    git checkout ${aggregator_branch_name}
+    if [ $? -ne 0 ]; then
+        pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
+        __pkgtools__at_function_exit
+        return 1
     fi
 
     __pkgtools__at_function_exit
