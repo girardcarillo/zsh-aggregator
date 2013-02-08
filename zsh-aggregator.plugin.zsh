@@ -315,7 +315,7 @@ function __aggregator_source ()
         export BOOST_ROOT=${CADFAEL_PREFIX}
         export GEANT4_ROOT_DIR=${CADFAEL_PREFIX}
         pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
-    elif [ ${aggregator_name} = bayeux ]; then
+    else
         for i in ${install_dir}/share/*
         do
             local base=$(basename $i)
@@ -351,7 +351,7 @@ function __aggregator_unsource ()
         unset BOOST_ROOT
         unset GEANT4_ROOT_DIR
         pkgtools__remove_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
-    elif [ ${aggregator_name} = bayeux ]; then
+    else
         for i in ${install_dir}/share/*
         do
             local base=$(basename $i)
