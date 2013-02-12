@@ -457,7 +457,8 @@ function __aggregator_remove ()
 
     echo y | ./pkgtools.d/pkgtool reset | tee -a ${aggregator_logfile} 2>&1
 
-    rm -rf ${aggregator_base_dir}/{install,build}
+    rm -rf ${aggregator_base_dir}/install
+    rm -rf ${aggregator_build_dir}/build
 
     __pkgtools__at_function_exit
     return 0
