@@ -61,6 +61,8 @@ function aggregator ()
                 mode="reset"
             elif [ "${token}" = "setup" ]; then
                 mode="setup"
+            elif [ "${token}" = "unsetup" ]; then
+                mode="unsetup"
             elif [ "${token}" = "test" ]; then
                 mode="test"
             elif [ "${token}" = "svn-diff" ]; then
@@ -160,6 +162,14 @@ function aggregator ()
                 __aggregator_source_${icompo}
                 if [ $? -ne 0 ]; then
                     pkgtools__msg_error "Sourcing '${icompo}' aggregator fails !"
+                    break
+                fi
+                ;;
+            unsetup)
+                pkgtools__msg_notice "Un-Sourcing '${icompo}' aggregator"
+                __aggregator_unsource_${icompo}
+                if [ $? -ne 0 ]; then
+                    pkgtools__msg_error "Un-Sourcing '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
