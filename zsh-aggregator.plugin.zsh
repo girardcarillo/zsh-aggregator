@@ -11,9 +11,6 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux channel falaise chevreuse)
 
-# Aliases
-alias do_nemo_setup='aggregator setup cadfael'
-
 function aggregator ()
 {
     __pkgtools__default_values
@@ -308,10 +305,10 @@ function __aggregator_source ()
 
     # Librairies
     if [ -d ${install_dir}/lib ]; then
-        export ${upname}_LIB_DIR=${install_dir}/lib
+        pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib
         pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib
     elif [ -d ${install_dir}/lib64 ]; then
-        export ${upname}_LIB_DIR=${install_dir}/lib64
+        pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib64
         pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib64
     fi
 
@@ -322,8 +319,9 @@ function __aggregator_source ()
     fi
 
     if [ ${aggregator_name} = cadfael ]; then
-        export BOOST_ROOT=${CADFAEL_PREFIX}
-        export GEANT4_ROOT_DIR=${CADFAEL_PREFIX}
+        pkgtools__set_variable BOOST_ROOT      ${CADFAEL_PREFIX}
+        pkgtools__set_variable GEANT4_ROOT_DIR ${CADFAEL_PREFIX}
+        pkgtools__set_variable CAMP_DIR        ${CADFAEL_PREFIX}
         pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
     else
         for i in ${install_dir}/share/*
