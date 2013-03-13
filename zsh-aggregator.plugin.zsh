@@ -96,7 +96,7 @@ function aggregator ()
         __pkgtools__at_function_exit
         return 0
     else
-        if [ ! -n "${SNAILWARE_SETUP_DONE}" ];then
+        if [ ! -n "${AGGREGATOR_SETUP_DONE}" ];then
             pkgtools__msg_warning "Setting default environment"
             __aggregator_environment
         fi
@@ -226,11 +226,11 @@ function __aggregator_environment ()
 {
     __pkgtools__at_function_enter __aggregator_environment
 
-    if [ -n "${SNAILWARE_SETUP_DONE}" ]; then
+    if [ -n "${AGGREGATOR_SETUP_DONE}" ]; then
         __pkgtools__at_function_exit
         return 0
     fi
-    export SNAILWARE_SETUP_DONE=1
+    export AGGREGATOR_SETUP_DONE=1
 
     # Take care of running machine
     case "${HOSTNAME}" in
