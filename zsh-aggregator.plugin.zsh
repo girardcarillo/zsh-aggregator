@@ -500,7 +500,7 @@ function __aggregator_set_cadfael
 			--without-hdf5	       \
 			--without-systemc      \
 			--without-python       \
-			--root-version 5.34.03 \
+			--root-version 5.34.05 \
 			--boost-version 1.51.0 \
 			--with-test"
     __aggregator_set
