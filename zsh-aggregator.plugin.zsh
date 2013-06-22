@@ -343,7 +343,7 @@ function __aggregator_unsource ()
     __pkgtools__at_function_enter __aggregator_unsource
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
+    local install_dir=${aggregator_base_dir}/install/${aggregator_config_version}
     unset ${upname}_PREFIX
     unset ${upname}_INCLUDE_DIR
     unset ${upname}_LIB_DIR
@@ -437,8 +437,8 @@ function __aggregator_build ()
     __pkgtools__at_function_enter __aggregator_build
 
     ./pkgtools.d/pkgtool configure                                                    \
-        --install-prefix     ${aggregator_base_dir}/install/${aggregator_branch_name} \
-        --ep-build-directory ${aggregator_build_dir}/build/${aggregator_branch_name}  \
+        --install-prefix     ${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version} \
+        --ep-build-directory ${aggregator_build_dir}/build/${aggregator_branch_name}/${aggregator_config_version}  \
         --download-directory ${aggregator_build_dir}/download                         \
         --config             ${aggregator_config_version}                             \
         ${aggregator_options} | tee -a ${aggregator_logfile} 2>&1
@@ -478,12 +478,13 @@ function __aggregator_dump ()
     __pkgtools__at_function_enter __aggregator_dump
 
     pkgtools__msg_notice "Dump aggregator"
-    pkgtools__msg_notice " |- name         : ${aggregator_name}"
-    pkgtools__msg_notice " |- branch       : ${aggregator_branch_name}"
-    pkgtools__msg_notice " |- repository   : ${aggregator_svn_path}"
-    pkgtools__msg_notice " |- options      : ${aggregator_options}"
-    pkgtools__msg_notice " |- install dir. : ${aggregator_base_dir}"
-    pkgtools__msg_notice " \`- build dir.  : ${aggregator_build_dir}"
+    pkgtools__msg_notice " |- name           : ${aggregator_name}"
+    pkgtools__msg_notice " |- branch         : ${aggregator_branch_name}"
+    pkgtools__msg_notice " |- repository     : ${aggregator_svn_path}"
+    pkgtools__msg_notice " |- options        : ${aggregator_options}"
+    pkgtools__msg_notice " |- config version : ${aggregator_config_version}"
+    pkgtools__msg_notice " |- install dir.   : ${aggregator_base_dir}"
+    pkgtools__msg_notice " \`- build dir.    : ${aggregator_build_dir}"
 
     __pkgtools__at_function_exit
     return 0
