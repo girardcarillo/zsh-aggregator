@@ -7,25 +7,26 @@ typeset -gA _aggregator_aliasmap
 typeset -ga _aggregator_components
 
 _aggregator_aliasmap=(
-    setup  setup
-    conf   configure
-    build  build
-    reset  reset
-    test   test
-    co     checkout
-    up     update
-    go     goto
-    env    environment
-    dump   dump
+  setup   setup
+  unsetup unsetup
+  conf    configure
+  build   build
+  reset   reset
+  test    test
+  co      checkout
+  up      update
+  go      goto
+  env     environment
+  dump    dump
 )
 
 _aggregator_components=(
-    all
-    bayeux
-    cadfael
-    channel
-    falaise
-    chevreuse
+  all
+  bayeux
+  cadfael
+  channel
+  falaise
+  chevreuse
 )
 
 # --- Sub-command functions ---
@@ -86,6 +87,12 @@ function _aggregator-reset ()
 function _aggregator-setup ()
 {
     [[ -n ${aggregator_describe} ]] && print "Source a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-unsetup ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Un-Source a component" && return
     __aggregator-choose-component
 }
 

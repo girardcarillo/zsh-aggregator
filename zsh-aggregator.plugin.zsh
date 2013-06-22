@@ -11,9 +11,6 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux channel falaise chevreuse)
 
-# Aliases
-alias do_nemo_setup='aggregator setup cadfael'
-
 function aggregator ()
 {
     __pkgtools__default_values
@@ -61,6 +58,8 @@ function aggregator ()
                 mode="reset"
             elif [ "${token}" = "setup" ]; then
                 mode="setup"
+            elif [ "${token}" = "unsetup" ]; then
+                mode="unsetup"
             elif [ "${token}" = "test" ]; then
                 mode="test"
             elif [ "${token}" = "svn-diff" ]; then
@@ -97,7 +96,7 @@ function aggregator ()
         __pkgtools__at_function_exit
         return 0
     else
-        if [ ! -n "${SNAILWARE_SETUP_DONE}" ];then
+        if [ ! -n "${AGGREGATOR_SETUP_DONE}" ];then
             pkgtools__msg_warning "Setting default environment"
             __aggregator_environment
         fi
@@ -163,6 +162,14 @@ function aggregator ()
                     break
                 fi
                 ;;
+            unsetup)
+                pkgtools__msg_notice "Un-Sourcing '${icompo}' aggregator"
+                __aggregator_unsource_${icompo}
+                if [ $? -ne 0 ]; then
+                    pkgtools__msg_error "Un-Sourcing '${icompo}' aggregator fails !"
+                    break
+                fi
+                ;;
             configure)
                 pkgtools__msg_notice "Configuring '${icompo}' aggregator"
                 __aggregator_set_${icompo}
@@ -219,11 +226,11 @@ function __aggregator_environment ()
 {
     __pkgtools__at_function_enter __aggregator_environment
 
-    if [ -n "${SNAILWARE_SETUP_DONE}" ]; then
+    if [ -n "${AGGREGATOR_SETUP_DONE}" ]; then
         __pkgtools__at_function_exit
         return 0
     fi
-    export SNAILWARE_SETUP_DONE=1
+    export AGGREGATOR_SETUP_DONE=1
 
     # Take care of running machine
     case "${HOSTNAME}" in
@@ -264,11 +271,11 @@ function __aggregator_environment ()
     esac
 
     # Export only if it is not already exported
-    pkgtools__set_variable SNAILWARE_BASE_DIR  "${nemo_base_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_PRO_DIR   "${nemo_pro_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_DEV_DIR   "${nemo_dev_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_SIM_DIR   "${nemo_simulation_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_BUILD_DIR "${nemo_build_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_BASE_DIR       "${nemo_base_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_PRO_DIR        "${nemo_pro_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_DEV_DIR        "${nemo_dev_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
+    pkgtools__set_variable SNAILWARE_BUILD_DIR      "${nemo_build_dir_tmp}"
 
     # Export main env. variables
     which ccache > /dev/null 2>&1
@@ -298,10 +305,10 @@ function __aggregator_source ()
 
     # Librairies
     if [ -d ${install_dir}/lib ]; then
-        export ${upname}_LIB_DIR=${install_dir}/lib
+        pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib
         pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib
     elif [ -d ${install_dir}/lib64 ]; then
-        export ${upname}_LIB_DIR=${install_dir}/lib64
+        pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib64
         pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib64
     fi
 
@@ -312,8 +319,10 @@ function __aggregator_source ()
     fi
 
     if [ ${aggregator_name} = cadfael ]; then
-        export BOOST_ROOT=${CADFAEL_PREFIX}
-        export GEANT4_ROOT_DIR=${CADFAEL_PREFIX}
+        pkgtools__set_variable BOOST_ROOT      ${CADFAEL_PREFIX}
+        pkgtools__set_variable GEANT4_ROOT_DIR ${CADFAEL_PREFIX}
+        pkgtools__set_variable CAMP_DIR        ${CADFAEL_PREFIX}
+        pkgtools__set_variable CAMP_LIBRARIES  ${CADFAEL_LIB_DIR}
         pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
     else
         for i in ${install_dir}/share/*
@@ -492,7 +501,7 @@ function __aggregator_set_cadfael
 			--without-hdf5	       \
 			--without-systemc      \
 			--without-python       \
-			--root-version 5.34.03 \
+			--root-version 5.34.07 \
 			--boost-version 1.51.0 \
 			--with-test"
     __aggregator_set
