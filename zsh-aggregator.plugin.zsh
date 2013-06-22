@@ -343,7 +343,7 @@ function __aggregator_unsource ()
     __pkgtools__at_function_enter __aggregator_unsource
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_config_version}
+    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
     unset ${upname}_PREFIX
     unset ${upname}_INCLUDE_DIR
     unset ${upname}_LIB_DIR
@@ -447,7 +447,6 @@ function __aggregator_build ()
         __pkgtools__at_function_exit
         return 1
     fi
-
 
     ./pkgtools.d/pkgtool install | tee -a ${aggregator_logfile} 2>&1
     if [ $? -ne 0 ]; then
