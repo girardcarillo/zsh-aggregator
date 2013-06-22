@@ -859,7 +859,7 @@ function __aggregator_set_chevreuse ()
 
     aggregator_name="chevreuse"
     aggregator_branch_name="master"
-    aggregator_config_version=""
+    aggregator_config_version="trunk"
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Chevreuse"
     aggregator_options="--with-all  \
                         --with-test"
