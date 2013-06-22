@@ -293,7 +293,7 @@ function __aggregator_source ()
     __pkgtools__at_function_enter __aggregator_source
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
+    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_branch_name}
     export ${upname}_PREFIX=${install_dir}
     export ${upname}_INCLUDE_DIR=${install_dir}/include
     export ${upname}_BIN_DIR=${install_dir}/bin
