@@ -404,7 +404,7 @@ function __aggregator_get ()
     which go-svn2git > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         pkgtools__msg_notice "Machine has go-svn2git"
-        go-svn2git -username garrido -verbose ${aggregator_svn_path}
+        go-svn2git -username nemo -verbose ${aggregator_svn_path}
         if [ $? -ne 0 ]; then
             pkgtools__msg_error "Checking fails!"
             __pkgtools__at_function_exit
@@ -412,7 +412,7 @@ function __aggregator_get ()
         fi
     else
         pkgtools__msg_notice "Machine does not have go-svn2git"
-        git svn init --prefix=svn/ --username=garrido --trunk=trunk --tags=tags --branches=branches \
+        git svn init --prefix=svn/ --username=nemo --trunk=trunk --tags=tags --branches=branches \
             ${aggregator_svn_path}
         git svn fetch
         if [ $? -ne 0 ]; then
