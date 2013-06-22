@@ -756,7 +756,7 @@ function __aggregator_set_falaise ()
     aggregator_name="falaise"
     aggregator_branch_name="master"
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Falaise"
-    aggregator_config_version="trunk"
+    aggregator_config_version="legacy"
     aggregator_options="--with-all        \
                         --with-snanalysis \
                         --with-test"
