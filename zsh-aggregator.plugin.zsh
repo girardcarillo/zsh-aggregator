@@ -322,6 +322,7 @@ function __aggregator_source ()
         pkgtools__set_variable BOOST_ROOT      ${CADFAEL_PREFIX}
         pkgtools__set_variable GEANT4_ROOT_DIR ${CADFAEL_PREFIX}
         pkgtools__set_variable CAMP_DIR        ${CADFAEL_PREFIX}
+        pkgtools__set_variable CAMP_LIBRARIES  ${CADFAEL_LIB_DIR}
         pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
     else
         for i in ${install_dir}/share/*
@@ -500,7 +501,7 @@ function __aggregator_set_cadfael
 			--without-hdf5	       \
 			--without-systemc      \
 			--without-python       \
-			--root-version 5.34.05 \
+			--root-version 5.34.07 \
 			--boost-version 1.51.0 \
 			--with-test"
     __aggregator_set
