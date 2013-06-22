@@ -504,6 +504,7 @@ function __aggregator_set_cadfael
 			--root-version 5.34.07 \
 			--boost-version 1.51.0 \
 			--with-test"
+    aggregator_config_version=""
     __aggregator_set
 
     __pkgtools__at_function_exit
@@ -855,6 +856,7 @@ function __aggregator_set_chevreuse ()
 
     aggregator_name="chevreuse"
     aggregator_branch_name="master"
+    aggregator_config_version=""
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Chevreuse"
     aggregator_options="--with-all  \
                         --with-test"
