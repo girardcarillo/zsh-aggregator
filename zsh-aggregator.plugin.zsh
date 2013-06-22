@@ -436,12 +436,15 @@ function __aggregator_build ()
 {
     __pkgtools__at_function_enter __aggregator_build
 
-    ./pkgtools.d/pkgtool configure \
-        ${aggregator_options}      \
+    if [ "x${aggregator_config_version}" != "x" ]; then
+        ${aggregator_options} += " --config ${aggregator_config_version}"
+    fi
+
+    ./pkgtools.d/pkgtool configure                                                    \
         --install-prefix     ${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version} \
         --ep-build-directory ${aggregator_build_dir}/build/${aggregator_branch_name}/${aggregator_config_version}  \
-        --download-directory ${aggregator_build_dir}/download \
-        --config             ${aggregator_config_version} | tee -a ${aggregator_logfile} 2>&1
+        --download-directory ${aggregator_build_dir}/download                         \
+        ${aggregator_options} | tee -a ${aggregator_logfile} 2>&1
     if [ $? -ne 0 ]; then
         pkgtools__msg_error "Configuration fails!"
         __pkgtools__at_function_exit
