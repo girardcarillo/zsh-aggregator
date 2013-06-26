@@ -64,6 +64,10 @@ antigen-bundle xgarrido/zsh-aggregator
 How to use
 ----------
 
+If your machine is not registered (it should be the case), then you must define
+the `SNAILWARE_BASE_DIR` environment variable. It points to where all software
+components is going to be installed.
+
 Type `aggregator` and press `TAB` key. You will be prompt to
 something like this
 
