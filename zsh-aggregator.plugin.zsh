@@ -270,12 +270,18 @@ function __aggregator_environment ()
             ;;
     esac
 
-    # Export only if it is not already exported
-    pkgtools__set_variable SNAILWARE_BASE_DIR       "${nemo_base_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_PRO_DIR        "${nemo_pro_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_DEV_DIR        "${nemo_dev_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
-    pkgtools__set_variable SNAILWARE_BUILD_DIR      "${nemo_build_dir_tmp}"
+    if env | grep -q ^SNAILWARE_BASE_DIR=; then
+        pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/snware"
+        pkgtools__set_variable SNAILWARE_DEV_DIR        "$SNAILWARE_BASE_DIR/development"
+        pkgtools__set_variable SNAILWARE_BUILD_DIR      "$SNAILWARE_PRO_DIR"
+    else
+        # Export only if it is not already exported
+        pkgtools__set_variable SNAILWARE_BASE_DIR       "${nemo_base_dir_tmp}"
+        pkgtools__set_variable SNAILWARE_PRO_DIR        "${nemo_pro_dir_tmp}"
+        pkgtools__set_variable SNAILWARE_DEV_DIR        "${nemo_dev_dir_tmp}"
+        pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
+        pkgtools__set_variable SNAILWARE_BUILD_DIR      "${nemo_build_dir_tmp}"
+    fi
 
     # Export main env. variables
     which ccache > /dev/null 2>&1
@@ -592,7 +598,7 @@ function __aggregator_set_bayeux ()
     # Building Bayeux
     aggregator_name="bayeux"
     aggregator_branch_name="master"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Bayeux"
+    aggregator_svn_path="https://svn.lal.in2p3.fr/users/garrido/Workdir/NEMO/SuperNEMO/Bayeux"
     aggregator_config_version="legacy"
     aggregator_options="--with-all  \
                         --with-test"
