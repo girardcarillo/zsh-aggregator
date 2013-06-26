@@ -76,8 +76,8 @@ something like this
 build         -- Build a component
 configure     -- Configure a component
 environment   -- Set environment
-git-checkout  -- Git-svn checkout a component
-git-update    -- Git-svn update a component
+checkout      -- Checkout a component
+update        -- Update a component
 goto          -- Goto a component directory
 rebuild       -- Rebuild component from scratch
 reset         -- Reset component
