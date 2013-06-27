@@ -443,7 +443,7 @@ function __aggregator_build ()
     __pkgtools__at_function_enter __aggregator_build
 
     if [ "x${aggregator_config_version}" != "x" ]; then
-        ${aggregator_options} += " --config ${aggregator_config_version}"
+        aggregator_options+=" --config ${aggregator_config_version}"
     fi
 
     ./pkgtools.d/pkgtool configure                                                    \
