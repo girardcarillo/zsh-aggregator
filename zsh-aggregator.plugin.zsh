@@ -580,14 +580,14 @@ function __aggregator_build_cadfael ()
          pkgtools__msg_notice "AGGREGATOR_BASE_DIR=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}"
          install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
 
-         directory_list=$(find ${install_dir} -type d)
+         directory_list=$(find ${install_dir} -type d -not -wholename '*.git*')
          for directory in ${=directory_list}; do
              pkgtools__msg_debug "Setting permissions in ${directory}"
              pkgtools__msg_debug "chmod a+rx ${directory}"
              chmod a+rx ${directory}
          done
 
-         file_list=$(find ${directory_name} -type f)
+         file_list=$(find ${directory_name} -type f -not -wholename '*.git*')
          for file in ${=file_list}; do
              file_right=$(stat -c %a "${file}")
              if [ $? -ne 0 ]; then
