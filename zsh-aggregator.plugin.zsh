@@ -574,7 +574,37 @@ function __aggregator_build_cadfael ()
          __aggregator_set_cadfael
          __aggregator_get
          __aggregator_build
-    )
+         # 2013-07-08 : Change files permission in the install directory to make
+         # them available for everyone (I guess only ROOT set this fucking
+         # behavior)
+         pkgtools__msg_notice "AGGREGATOR_BASE_DIR=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}"
+         install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
+
+         directory_list=$(find ${install_dir} -type d)
+         for directory in ${=directory_list}; do
+             pkgtools__msg_debug "Setting permissions in ${directory}"
+             pkgtools__msg_debug "chmod a+rx ${directory}"
+             chmod a+rx ${directory}
+         done
+
+         file_list=$(find ${directory_name} -type f)
+         for file in ${=file_list}; do
+             file_right=$(stat -c %a "${file}")
+             if [ $? -ne 0 ]; then
+                 pkgtools__msg_error "Can't change permission on ${file} file"
+                 __pkgtools__at_function_exit
+                 return 1
+             fi
+
+             owner_right=$((${file_right}/100))
+             # never gives writing rights
+             other_right=$((${owner_right}-2))
+             right=${owner_right}${other_right}${other_right}
+
+             pkgtools__msg_debug "chmod ${right} ${file}"
+             chmod ${right} ${file}
+         done
+     )
 
     __pkgtools__at_function_exit
     return 0
