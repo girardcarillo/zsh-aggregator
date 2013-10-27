@@ -9,7 +9,7 @@
 
 # Aggregator bundles
 typeset -ga __aggregator_bundles
-__aggregator_bundles=(cadfael bayeux channel falaise chevreuse)
+__aggregator_bundles=(cadfael bayeux channel falaise)
 
 function aggregator ()
 {
@@ -62,8 +62,6 @@ function aggregator ()
                 mode="unsetup"
             elif [ "${token}" = "test" ]; then
                 mode="test"
-            elif [ "${token}" = "svn-diff" ]; then
-                mode="svn-diff"
             elif [ "${token}" = "checkout" ]; then
                 mode="checkout"
             elif [ "${token}" = "dump" ]; then
@@ -236,7 +234,7 @@ function __aggregator_environment ()
     case "${HOSTNAME}" in
         garrido-laptop)
             nemo_base_dir_tmp="/home/${USER}/Workdir/NEMO"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware_test"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/toto"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
             nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
@@ -271,7 +269,7 @@ function __aggregator_environment ()
     esac
 
     if env | grep -q ^SNAILWARE_BASE_DIR=; then
-        pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/snware"
+        pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/toto"
         pkgtools__set_variable SNAILWARE_DEV_DIR        "$SNAILWARE_BASE_DIR/development"
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "$SNAILWARE_PRO_DIR"
     else
@@ -284,8 +282,7 @@ function __aggregator_environment ()
     fi
 
     # Export main env. variables
-    which ccache > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
+    if $(pkgtools__has_binary ccache); then
         export CXX='ccache g++'
         export CC='ccache gcc'
     fi
@@ -300,45 +297,45 @@ function __aggregator_source ()
 
     local upname=${aggregator_name:u}
     local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
-    export ${upname}_PREFIX=${install_dir}
-    export ${upname}_INCLUDE_DIR=${install_dir}/include
-    export ${upname}_BIN_DIR=${install_dir}/bin
-    export ${upname}_SHARE_DIR=${install_dir}/share
-    export ${upname}_ETC_DIR=${install_dir}/etc
+    # export ${upname}_PREFIX=${install_dir}
+    # export ${upname}_INCLUDE_DIR=${install_dir}/include
+    # export ${upname}_BIN_DIR=${install_dir}/bin
+    # export ${upname}_SHARE_DIR=${install_dir}/share
+    # export ${upname}_ETC_DIR=${install_dir}/etc
 
     # Binaries
     pkgtools__add_path_to_PATH ${install_dir}/bin
 
     # Librairies
-    if [ -d ${install_dir}/lib ]; then
-        pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib
-        pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib
-    elif [ -d ${install_dir}/lib64 ]; then
-        pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib64
-        pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib64
-    fi
+    # if [ -d ${install_dir}/lib ]; then
+    #     pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib
+    #     pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib
+    # elif [ -d ${install_dir}/lib64 ]; then
+    #     pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib64
+    #     pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib64
+    # fi
 
     # cmake modules
-    if [ -d ${install_dir}/share/cmake/Modules ]; then
-        export ${upname}_DIR=${install_dir}/share/cmake/Modules
-        pkgtools__add_path_to_env_variable CMAKE_MODULE_PATH ${install_dir}/share/cmake/Modules
-    fi
+    # if [ -d ${install_dir}/share/cmake/Modules ]; then
+    #     export ${upname}_DIR=${install_dir}/share/cmake/Modules
+    #     pkgtools__add_path_to_env_variable CMAKE_MODULE_PATH ${install_dir}/share/cmake/Modules
+    # fi
 
-    if [ ${aggregator_name} = cadfael ]; then
-        pkgtools__set_variable BOOST_ROOT      ${CADFAEL_PREFIX}
-        pkgtools__set_variable GEANT4_ROOT_DIR ${CADFAEL_PREFIX}
-        pkgtools__set_variable CAMP_DIR        ${CADFAEL_PREFIX}
-        pkgtools__set_variable CAMP_LIBRARIES  ${CADFAEL_LIB_DIR}
-        pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
-    else
-        for i in ${install_dir}/share/*
-        do
-            local base=$(basename $i)
-            local upbase=${base:u}
-            export ${upbase}_DATA_DIR=${install_dir}/share/${base}
-            unset base upbase
-        done
-    fi
+    # if [ ${aggregator_name} = cadfael ]; then
+    #     pkgtools__set_variable BOOST_ROOT      ${CADFAEL_PREFIX}
+    #     pkgtools__set_variable GEANT4_ROOT_DIR ${CADFAEL_PREFIX}
+    #     pkgtools__set_variable CAMP_DIR        ${CADFAEL_PREFIX}
+    #     pkgtools__set_variable CAMP_LIBRARIES  ${CADFAEL_LIB_DIR}
+    #     pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
+    # else
+    #     for i in ${install_dir}/share/*
+    #     do
+    #         local base=$(basename $i)
+    #         local upbase=${base:u}
+    #         export ${upbase}_DATA_DIR=${install_dir}/share/${base}
+    #         unset base upbase
+    #     done
+    # fi
 
     __pkgtools__at_function_exit
     return 0
@@ -350,31 +347,31 @@ function __aggregator_unsource ()
 
     local upname=${aggregator_name:u}
     local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
-    unset ${upname}_PREFIX
-    unset ${upname}_INCLUDE_DIR
-    unset ${upname}_LIB_DIR
-    unset ${upname}_BIN_DIR
-    unset ${upname}_SHARE_DIR
-    unset ${upname}_ETC_DIR
-    unset ${upname}_DIR
+    # unset ${upname}_PREFIX
+    # unset ${upname}_INCLUDE_DIR
+    # unset ${upname}_LIB_DIR
+    # unset ${upname}_BIN_DIR
+    # unset ${upname}_SHARE_DIR
+    # unset ${upname}_ETC_DIR
+    # unset ${upname}_DIR
 
     pkgtools__remove_path_to_PATH ${install_dir}/bin
-    pkgtools__remove_path_to_LD_LIBRARY_PATH ${install_dir}/lib
-    pkgtools__remove_path_to_env_variable CMAKE_MODULE_PATH ${install_dir}/share/cmake/Modules
+    # pkgtools__remove_path_to_LD_LIBRARY_PATH ${install_dir}/lib
+    # pkgtools__remove_path_to_env_variable CMAKE_MODULE_PATH ${install_dir}/share/cmake/Modules
 
-    if [ ${aggregator_name} = cadfael ]; then
-        unset BOOST_ROOT
-        unset GEANT4_ROOT_DIR
-        pkgtools__remove_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
-    else
-        for i in ${install_dir}/share/*
-        do
-            local base=$(basename $i)
-            local upbase=${base:u}
-            unset ${upbase}_DATA_DIR
-            unset base upbase
-        done
-    fi
+    # if [ ${aggregator_name} = cadfael ]; then
+    #     unset BOOST_ROOT
+    #     unset GEANT4_ROOT_DIR
+    #     pkgtools__remove_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
+    # else
+    #     for i in ${install_dir}/share/*
+    #     do
+    #         local base=$(basename $i)
+    #         local upbase=${base:u}
+    #         unset ${upbase}_DATA_DIR
+    #         unset base upbase
+    #     done
+    # fi
 
     __pkgtools__at_function_exit
     return 0
@@ -406,11 +403,10 @@ function __aggregator_get ()
 {
     __pkgtools__at_function_enter __aggregator_get
 
-    which go-svn2git > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
+    if $(pkgtools__has_binary go-svn2git); then
         pkgtools__msg_notice "Machine has go-svn2git"
         go-svn2git -username nemo -verbose ${aggregator_svn_path}
-        if [ $? -ne 0 ]; then
+        if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Checking fails!"
             __pkgtools__at_function_exit
             return 1
@@ -420,14 +416,14 @@ function __aggregator_get ()
         git svn init --prefix=svn/ --username=nemo --trunk=trunk --tags=tags --branches=branches \
             ${aggregator_svn_path}
         git svn fetch
-        if [ $? -ne 0 ]; then
+        if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Checking fails!"
             __pkgtools__at_function_exit
             return 1
         fi
     fi
     git checkout ${aggregator_branch_name}
-    if [ $? -ne 0 ]; then
+    if $(pkgtools__last_command_fails); then
         pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
         __pkgtools__at_function_exit
         return 1
@@ -452,29 +448,17 @@ function __aggregator_build ()
     local repo_dir="${aggregator_base_dir}/repo"
 
     cmake \
-        -DCMAKE_INSTALL_PREFIX:PATH=${install_dir}/ \
-        -DCADFAEL_LOCAL_CACHEDIR=${download_dir} \
-        -DCMAKE_BUILD_TYPE:STRING="Release" \
-        -DCADFAEL_USE_LOCAL_CACHE=ON \
-        -DCADFAEL_VERBOSE_BUILD=ON \
-        -DCADFAEL_STEP_TARGETS=ON \
-        -Dport/gsl=ON \
-        -Dport/clhep=ON \
-        -Dport/boost=ON \
-        -Dport/boost+regex=ON \
-        -Dport/camp=ON \
-        -Dport/xerces-c=ON \
-        -Dport/geant4=ON \
-        -Dport/root=ON \
+        -DCMAKE_INSTALL_PREFIX=${install_dir} \
+        ${aggregator_options} \
         ${repo_dir} | tee -a ${aggregator_logfile} 2>&1
-    if [ $? -ne 0 ]; then
+    if $(pkgtools__last_command_fails); then
         pkgtools__msg_error "Configuration fails!"
         __pkgtools__at_function_exit
         return 1
     fi
 
-    make | tee -a ${aggregator_logfile} 2>&1
-    if [ $? -ne 0 ]; then
+    ninja | tee -a ${aggregator_logfile} 2>&1
+    if $(pkgtools__last_command_fails); then
         pkgtools__msg_error "Installation fails!"
         __pkgtools__at_function_exit
         return 1
@@ -487,8 +471,6 @@ function __aggregator_build ()
 function __aggregator_remove ()
 {
     __pkgtools__at_function_enter __aggregator_remove
-
-    echo y | ./pkgtools.d/pkgtool reset | tee -a ${aggregator_logfile} 2>&1
 
     rm -rf ${aggregator_base_dir}/install
     rm -rf ${aggregator_build_dir}/build
@@ -518,24 +500,29 @@ function __aggregator_set_cadfael
 {
     __pkgtools__at_function_enter __aggregator_set_cadfael
 
-    local build_dir="__install-$(uname --kernel-name)-$(uname --machine)"
-
     aggregator_name="cadfael"
     aggregator_branch_name="master"
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Cadfael"
-    aggregator_options=" -DCMAKE_BUILD_TYPE:STRING=\"Release\" \
-     -DCADFAEL_USE_LOCAL_CACHE=ON \
-     -DCADFAEL_VERBOSE_BUILD=ON \
-     -DCADFAEL_STEP_TARGETS=ON \
-     -Dport/patchelf=ON \
-     -Dport/gsl=ON \
-     -Dport/clhep=ON \
-     -Dport/boost=ON \
-     -Dport/boost+regex=ON \
-     -Dport/camp=ON \
-     -Dport/xerces-c=ON \
-     -Dport/geant4=ON \
-     -Dport/root=ON"
+    aggregator_options="
+      -DCADFAEL_VERBOSE_BUILD=ON \
+      -DCADFAEL_STEP_TARGETS=ON  \
+      -Dport/patchelf=ON         \
+      -Dport/gsl=ON              \
+      -Dport/clhep=ON            \
+      -Dport/boost=ON            \
+      -Dport/boost+regex=ON      \
+      -Dport/camp=ON             \
+      -Dport/xerces-c=ON         \
+      -Dport/geant4=ON           \
+      -Dport/geant4+gdml=ON      \
+      -Dport/geant4+x11=ON       \
+      -Dport/geant4+data=ON      \
+      -Dport/root=ON             \
+      -Dport/root+x11=ON         \
+      -Dport/root+asimage=ON     \
+      -Dport/root+mathmore=ON    \
+      -Dport/root+opengl=ON      \
+    "
     aggregator_config_version=""
     __aggregator_set
 
@@ -608,95 +595,6 @@ function __aggregator_dump_cadfael ()
     __pkgtools__at_function_enter __aggregator_dump_cadfael
 
     __aggregator_set_cadfael
-    __aggregator_dump
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_set_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_set_bayeux
-
-    # Building Bayeux
-    aggregator_name="bayeux"
-    aggregator_branch_name="master"
-    aggregator_svn_path="https://svn.lal.in2p3.fr/users/garrido/Workdir/NEMO/SuperNEMO/Bayeux"
-    aggregator_config_version="legacy"
-    aggregator_options="--with-all  \
-                        --with-test"
-    __aggregator_set
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_get_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_get_bayeux
-
-    __aggregator_set_bayeux
-    __aggregator_get
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_source_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_source_bayeux
-
-    __aggregator_set_bayeux
-    __aggregator_source
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_unsource_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_unsource_bayeux
-
-    __aggregator_set_bayeux
-    __aggregator_unsource
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_remove_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_remove_bayeux
-
-    (
-        __aggregator_set_bayeux
-        __aggregator_remove
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_build_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_build_bayeux
-
-    (
-        __aggregator_source_cadfael
-        __aggregator_set_bayeux
-        __aggregator_get
-        __aggregator_build
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_dump_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_dump_bayeux
-
-    __aggregator_set_bayeux
     __aggregator_dump
 
     __pkgtools__at_function_exit
