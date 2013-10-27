@@ -214,7 +214,7 @@ function aggregator ()
     done
 
     unset mode append_list_of_components_arg append_list_of_options_arg
-
+    __pkgtools__default_values
     __pkgtools__at_function_exit
     return 0
 
@@ -268,7 +268,7 @@ function __aggregator_environment ()
             ;;
     esac
 
-    if env | grep -q ^SNAILWARE_BASE_DIR=; then
+    if env | grep -q "^SNAILWARE_BASE_DIR="; then
         pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/toto"
         pkgtools__set_variable SNAILWARE_DEV_DIR        "$SNAILWARE_BASE_DIR/development"
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "$SNAILWARE_PRO_DIR"
@@ -443,26 +443,12 @@ function __aggregator_build ()
     fi
     cd ${build_dir}
 
-    local install_dir="${aggregator_base_dir}/install"
-    local download_dir="${aggregator_base_dir}/download"
-    local repo_dir="${aggregator_base_dir}/repo"
-
-    cmake \
-        -DCMAKE_INSTALL_PREFIX=${install_dir} \
-        ${aggregator_options} \
-        ${repo_dir} | tee -a ${aggregator_logfile} 2>&1
-    if $(pkgtools__last_command_fails); then
-        pkgtools__msg_error "Configuration fails!"
-        __pkgtools__at_function_exit
-        return 1
-    fi
-
-    ninja | tee -a ${aggregator_logfile} 2>&1
-    if $(pkgtools__last_command_fails); then
-        pkgtools__msg_error "Installation fails!"
-        __pkgtools__at_function_exit
-        return 1
-    fi
+    # ninja | tee -a ${aggregator_logfile} 2>&1
+    # if $(pkgtools__last_command_fails); then
+    #     pkgtools__msg_error "Installation fails!"
+    #     __pkgtools__at_function_exit
+    #     return 1
+    # fi
 
     __pkgtools__at_function_exit
     return 0
@@ -503,27 +489,7 @@ function __aggregator_set_cadfael
     aggregator_name="cadfael"
     aggregator_branch_name="master"
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Cadfael"
-    aggregator_options="
-      -DCADFAEL_VERBOSE_BUILD=ON \
-      -DCADFAEL_STEP_TARGETS=ON  \
-      -Dport/patchelf=ON         \
-      -Dport/gsl=ON              \
-      -Dport/clhep=ON            \
-      -Dport/boost=ON            \
-      -Dport/boost+regex=ON      \
-      -Dport/camp=ON             \
-      -Dport/xerces-c=ON         \
-      -Dport/geant4=ON           \
-      -Dport/geant4+gdml=ON      \
-      -Dport/geant4+x11=ON       \
-      -Dport/geant4+data=ON      \
-      -Dport/root=ON             \
-      -Dport/root+x11=ON         \
-      -Dport/root+asimage=ON     \
-      -Dport/root+mathmore=ON    \
-      -Dport/root+opengl=ON      \
-    "
-    aggregator_config_version=""
+
     __aggregator_set
 
     __pkgtools__at_function_exit
@@ -536,6 +502,51 @@ function __aggregator_get_cadfael ()
 
     __aggregator_set_cadfael
     __aggregator_get
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_configure_cadfael ()
+{
+    __pkgtools__at_function_enter __agregator_configure_cadfael
+
+    local build_dir="${aggregator_base_dir}/build"
+    if [ ! -d ${build_dir} ]; then
+        mkdir ${build_dir}
+    fi
+    cd ${build_dir}
+
+    local install_dir="${aggregator_base_dir}/install"
+    local download_dir="${aggregator_base_dir}/download"
+    local repo_dir="${aggregator_base_dir}/repo"
+
+    cmake                                     \
+        -DCMAKE_INSTALL_PREFIX=${install_dir} \
+        -DCADFAEL_VERBOSE_BUILD=ON            \
+        -DCADFAEL_STEP_TARGETS=ON             \
+        -Dport/patchelf=ON                    \
+        -Dport/gsl=ON                         \
+        -Dport/clhep=ON                       \
+        -Dport/boost=ON                       \
+        -Dport/boost+regex=ON                 \
+        -Dport/camp=ON                        \
+        -Dport/xerces-c=ON                    \
+        -Dport/geant4=ON                      \
+        -Dport/geant4+gdml=ON                 \
+        -Dport/geant4+x11=ON                  \
+        -Dport/geant4+data=ON                 \
+        -Dport/root=ON                        \
+        -Dport/root+x11=ON                    \
+        -Dport/root+asimage=ON                \
+        -Dport/root+mathmore=ON               \
+        -Dport/root+opengl=ON                 \
+        ${repo_dir} | tee -a ${aggregator_logfile} 2>&1
+    if $(pkgtools__last_command_fails); then
+        pkgtools__msg_error "Configuration fails!"
+        __pkgtools__at_function_exit
+        return 1
+    fi
 
     __pkgtools__at_function_exit
     return 0
@@ -583,6 +594,7 @@ function __aggregator_build_cadfael ()
      (
          __aggregator_set_cadfael
          __aggregator_get
+         __aggregator_configure_cadfael
          __aggregator_build
      )
 
