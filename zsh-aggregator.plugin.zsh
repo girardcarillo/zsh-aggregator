@@ -270,7 +270,7 @@ function __aggregator_environment ()
             ;;
     esac
 
-    if env | grep -q ^SNAILWARE_BASE_DIR=; then
+    if env | grep -q "^SNAILWARE_BASE_DIR="; then
         pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/snware"
         pkgtools__set_variable SNAILWARE_DEV_DIR        "$SNAILWARE_BASE_DIR/development"
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "$SNAILWARE_PRO_DIR"
@@ -510,7 +510,7 @@ function __aggregator_set_cadfael
 			--without-hdf5	       \
 			--without-systemc      \
 			--without-python       \
-			--root-version 5.34.07 \
+			--root-version 5.34.10 \
 			--boost-version 1.51.0 \
 			--with-test"
     aggregator_config_version=""
