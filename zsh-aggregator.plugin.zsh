@@ -11,6 +11,8 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux channel falaise)
 
+typeset -g __aggregator_use_make=false
+
 function aggregator ()
 {
     __pkgtools__default_values
@@ -44,7 +46,11 @@ function aggregator ()
 	        pkgtools__ui_batch
 	    elif [ "${opt}" = "--gui" ]; then
 	        pkgtools__ui_using_gui
-           fi
+            elif [ "${opt}" = "--use-make" ]; then
+                __aggregator_use_make=true
+            elif [ "${opt}" = "--use-ninja" ]; then
+                __aggregator_use_make=false
+            fi
         else
             if [ "${token}" = "environment" ]; then
                 mode="environment"
@@ -119,13 +125,13 @@ function aggregator ()
 
         # Look for the corresponding directory
         pkgtools__msg_devel "repository=${SNAILWARE_PRO_DIR}/${icompo}/repo"
-        local is_found=0
-        pushd ${SNAILWARE_PRO_DIR}/${icompo}/repo > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            is_found=1
+        local is_found=false
+        pushd ${aggregator_repo_dir} > /dev/null 2>&1
+        if $(pkgtools__last_command_succeeds); then
+            is_found=true
         fi
 
-        if [ ${is_found} -eq 0 ]; then
+        if ! ${is_found}; then
             pkgtools__msg_error "Repository of '${icompo}' does not exist!"
             continue
         elif [ ${mode} = goto ]; then
@@ -137,62 +143,67 @@ function aggregator ()
         case ${mode} in
             checkout)
                 pkgtools__msg_notice "Getting '${icompo}' aggregator"
-                __aggregator_get_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_get
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Getting '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             update)
                 pkgtools__msg_notice "Updating '${icompo}' aggregator"
-                git svn fetch
-                git svn rebase
-                if [ $? -ne 0 ]; then
+                git svn fetch && git svn rebase
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Updating '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             setup)
                 pkgtools__msg_notice "Sourcing '${icompo}' aggregator"
-                __aggregator_source_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_source
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Sourcing '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             unsetup)
                 pkgtools__msg_notice "Un-Sourcing '${icompo}' aggregator"
-                __aggregator_unsource_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_unsource
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Un-Sourcing '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             configure)
                 pkgtools__msg_notice "Configuring '${icompo}' aggregator"
-                __aggregator_set_${icompo}
+                __aggregator_configure_${icompo}
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Configuring '${icompo}' aggregator fails !"
+                    break
+                fi
                 ;;
             build)
                 pkgtools__msg_notice "Building '${icompo}' aggregator"
-                __aggregator_build_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_get
+                __aggregator_configure_${icompo}
+                __aggregator_build
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Building '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             dump)
                 pkgtools__msg_notice "Dumping '${icompo}' aggregator"
-                __aggregator_dump_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_dump
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Dumping '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             reset)
                 pkgtools__msg_notice "Reseting '${icompo}' aggregator"
-                __aggregator_unsource_${icompo}
-                __aggregator_remove_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_unsource
+                __aggregator_remove
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Reseting '${icompo}' aggregator fails !"
                     break
                 fi
@@ -206,8 +217,7 @@ function aggregator ()
                 ;;
             test)
                 pkgtools__msg_notice "Testing '${icompo}' aggregator"
-                ./pkgtools.d/pkgtool test
-                 ;;
+                ;;
         esac
 
         popd > /dev/null 2>&1
@@ -296,7 +306,7 @@ function __aggregator_source ()
     __pkgtools__at_function_enter __aggregator_source
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
+    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
     # export ${upname}_PREFIX=${install_dir}
     # export ${upname}_INCLUDE_DIR=${install_dir}/include
     # export ${upname}_BIN_DIR=${install_dir}/bin
@@ -346,7 +356,7 @@ function __aggregator_unsource ()
     __pkgtools__at_function_enter __aggregator_unsource
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
+    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
     # unset ${upname}_PREFIX
     # unset ${upname}_INCLUDE_DIR
     # unset ${upname}_LIB_DIR
@@ -388,11 +398,17 @@ function __aggregator_set ()
     fi
     aggregator_logfile=/tmp/${USER}/${aggregator_name}_${aggregator_branch_name}.log
     aggregator_base_dir=${SNAILWARE_PRO_DIR}/${aggregator_name}
-    aggregator_build_dir=${SNAILWARE_BUILD_DIR}/${aggregator_name}
+    aggregator_repo_dir=${aggregator_base_dir}/repo
+    aggregator_build_dir=${aggregator_base_dir}/build/${aggregator_branch_name}
+    aggregator_install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
 
-    if [ ! -d  ${aggregator_base_dir}/repo ]; then
-        pkgtools__msg_warning "${aggregator_base_dir}/repo directory not created"
-        mkdir -p ${aggregator_base_dir}/repo
+    if [ ! -d ${aggregator_build_dir} ]; then
+        mkdir -p ${aggregator_build_dir}
+    fi
+
+    if [ ! -d  ${aggregator_repo_dir} ]; then
+        pkgtools__msg_warning "${aggregator_repo_dir} directory not created"
+        mkdir -p ${aggregator_repo_dir}
     fi
 
     __pkgtools__at_function_exit
@@ -437,18 +453,24 @@ function __aggregator_build ()
 {
     __pkgtools__at_function_enter __aggregator_build
 
-    local build_dir="${aggregator_base_dir}/build"
-    if [ ! -d ${build_dir} ]; then
-        mkdir ${build_dir}
-    fi
-    cd ${build_dir}
+    pkgtools__msg_devel "use make=${__aggregator_use_make}"
+    cd ${aggregator_build_dir}
 
-    # ninja | tee -a ${aggregator_logfile} 2>&1
-    # if $(pkgtools__last_command_fails); then
-    #     pkgtools__msg_error "Installation fails!"
-    #     __pkgtools__at_function_exit
-    #     return 1
-    # fi
+    if ${__aggregator_use_make}; then
+        make install | tee -a ${aggregator_logfile} 2>&1
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Installation fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    else
+        ninja | tee -a ${aggregator_logfile} 2>&1
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Installation fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    fi
 
     __pkgtools__at_function_exit
     return 0
@@ -458,8 +480,8 @@ function __aggregator_remove ()
 {
     __pkgtools__at_function_enter __aggregator_remove
 
-    rm -rf ${aggregator_base_dir}/install
-    rm -rf ${aggregator_build_dir}/build
+    rm -rf ${aggregator_install_dir}
+    rm -rf ${aggregator_build_dir}
 
     __pkgtools__at_function_exit
     return 0
@@ -475,7 +497,7 @@ function __aggregator_dump ()
     pkgtools__msg_notice " |- repository     : ${aggregator_svn_path}"
     pkgtools__msg_notice " |- options        : ${aggregator_options}"
     pkgtools__msg_notice " |- config version : ${aggregator_config_version}"
-    pkgtools__msg_notice " |- install dir.   : ${aggregator_base_dir}"
+    pkgtools__msg_notice " |- install dir.   : ${aggregator_install_dir}"
     pkgtools__msg_notice " \`- build dir.    : ${aggregator_build_dir}"
 
     __pkgtools__at_function_exit
@@ -496,33 +518,16 @@ function __aggregator_set_cadfael
     return 0
 }
 
-function __aggregator_get_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_get_cadfael
-
-    __aggregator_set_cadfael
-    __aggregator_get
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
 function __aggregator_configure_cadfael ()
 {
     __pkgtools__at_function_enter __agregator_configure_cadfael
 
-    local build_dir="${aggregator_base_dir}/build"
-    if [ ! -d ${build_dir} ]; then
-        mkdir ${build_dir}
-    fi
-    cd ${build_dir}
+    cd ${aggregator_build_dir}
 
-    local install_dir="${aggregator_base_dir}/install"
-    local download_dir="${aggregator_base_dir}/download"
-    local repo_dir="${aggregator_base_dir}/repo"
+    pkgtools__msg_devel "aggregator options=${aggregator_options}"
 
     cmake                                     \
-        -DCMAKE_INSTALL_PREFIX=${install_dir} \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
         -DCADFAEL_VERBOSE_BUILD=ON            \
         -DCADFAEL_STEP_TARGETS=ON             \
         -Dport/patchelf=ON                    \
@@ -541,73 +546,13 @@ function __aggregator_configure_cadfael ()
         -Dport/root+asimage=ON                \
         -Dport/root+mathmore=ON               \
         -Dport/root+opengl=ON                 \
-        ${repo_dir} | tee -a ${aggregator_logfile} 2>&1
+        -G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja) \
+        ${aggregator_repo_dir} | tee -a ${aggregator_logfile} 2>&1
     if $(pkgtools__last_command_fails); then
         pkgtools__msg_error "Configuration fails!"
         __pkgtools__at_function_exit
         return 1
     fi
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_source_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_source_cadfael
-
-    __aggregator_set_cadfael
-    __aggregator_source
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_unsource_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_unsource_cadfael
-
-    __aggregator_set_cadfael
-    __aggregator_unsource
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_remove_cadfael ()
-{
-    __pkgtools__at_function_enter __agregator_remove_cadfael
-
-    (
-        __aggregator_set_cadfael
-        __aggregator_remove
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_build_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_build_cadfael
-
-     (
-         __aggregator_set_cadfael
-         __aggregator_get
-         __aggregator_configure_cadfael
-         __aggregator_build
-     )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_dump_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_dump_cadfael
-
-    __aggregator_set_cadfael
-    __aggregator_dump
 
     __pkgtools__at_function_exit
     return 0
