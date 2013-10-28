@@ -244,7 +244,7 @@ function __aggregator_environment ()
     case "${HOSTNAME}" in
         garrido-laptop)
             nemo_base_dir_tmp="/home/${USER}/Workdir/NEMO"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/toto"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware_test"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
             nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
@@ -279,7 +279,7 @@ function __aggregator_environment ()
     esac
 
     if env | grep -q "^SNAILWARE_BASE_DIR="; then
-        pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/toto"
+        pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/snware_test"
         pkgtools__set_variable SNAILWARE_DEV_DIR        "$SNAILWARE_BASE_DIR/development"
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "$SNAILWARE_PRO_DIR"
     else
