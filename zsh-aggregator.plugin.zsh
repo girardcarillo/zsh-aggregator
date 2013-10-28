@@ -11,7 +11,7 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux channel falaise)
 
-typeset -g __aggregator_use_make=false
+typeset -g __aggregator_use_make=true
 
 function aggregator ()
 {
