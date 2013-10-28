@@ -175,7 +175,7 @@ function aggregator ()
                 ;;
             configure)
                 pkgtools__msg_notice "Configuring '${icompo}' aggregator"
-                __aggregator_configure_${icompo}
+                __aggregator_configure
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Configuring '${icompo}' aggregator fails !"
                     break
@@ -184,7 +184,7 @@ function aggregator ()
             build)
                 pkgtools__msg_notice "Building '${icompo}' aggregator"
                 __aggregator_get
-                __aggregator_configure_${icompo}
+                __aggregator_configure
                 __aggregator_build
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Building '${icompo}' aggregator fails !"
@@ -292,10 +292,10 @@ function __aggregator_environment ()
     fi
 
     # Export main env. variables
-    if $(pkgtools__has_binary ccache); then
-        export CXX='ccache g++'
-        export CC='ccache gcc'
-    fi
+    # if $(pkgtools__has_binary ccache); then
+    #     export CXX='ccache g++'
+    #     export CC='ccache gcc'
+    # fi
 
     __pkgtools__at_function_exit
     return 0
@@ -411,6 +411,14 @@ function __aggregator_set ()
         mkdir -p ${aggregator_repo_dir}
     fi
 
+    if ! ${__aggregator_use_make}; then
+        if ! $(pkgtools__has_binary ninja); then
+            pkgtools__msg_error "Ninja binary has not been found !"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    fi
+
     __pkgtools__at_function_exit
     return 0
 }
@@ -441,6 +449,25 @@ function __aggregator_get ()
     git checkout ${aggregator_branch_name}
     if $(pkgtools__last_command_fails); then
         pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
+        __pkgtools__at_function_exit
+        return 1
+    fi
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_configure ()
+{
+    __pkgtools__at_function_enter __agregator_configure
+
+    cd ${aggregator_build_dir}
+
+    cmake                             \
+        $(echo ${aggregator_options}) \
+        ${aggregator_repo_dir} | tee -a ${aggregator_logfile} 2>&1
+    if $(pkgtools__last_command_fails); then
+        pkgtools__msg_error "Configuration fails!"
         __pkgtools__at_function_exit
         return 1
     fi
@@ -511,48 +538,33 @@ function __aggregator_set_cadfael
     aggregator_name="cadfael"
     aggregator_branch_name="master"
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Cadfael"
+    aggregator_options="                                 \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
+        -DCADFAEL_VERBOSE_BUILD=ON                       \
+        -DCADFAEL_STEP_TARGETS=ON                        \
+        -Dport/patchelf=ON                               \
+        -Dport/gsl=ON                                    \
+        -Dport/clhep=ON                                  \
+        -Dport/boost=ON                                  \
+        -Dport/boost+regex=ON                            \
+        -Dport/camp=ON                                   \
+        -Dport/xerces-c=ON                               \
+        -Dport/geant4=ON                                 \
+        -Dport/geant4+gdml=ON                            \
+        -Dport/geant4+x11=ON                             \
+        -Dport/geant4+data=ON                            \
+        -Dport/root=ON                                   \
+        -Dport/root+x11=ON                               \
+        -Dport/root+asimage=ON                           \
+        -Dport/root+mathmore=ON                          \
+        -Dport/root+opengl=ON
+    "
+
+    if ! ${__aggregator_use_make}; then
+        aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja)"
+    fi
 
     __aggregator_set
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_configure_cadfael ()
-{
-    __pkgtools__at_function_enter __agregator_configure_cadfael
-
-    cd ${aggregator_build_dir}
-
-    pkgtools__msg_devel "aggregator options=${aggregator_options}"
-
-    cmake                                     \
-        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
-        -DCADFAEL_VERBOSE_BUILD=ON            \
-        -DCADFAEL_STEP_TARGETS=ON             \
-        -Dport/patchelf=ON                    \
-        -Dport/gsl=ON                         \
-        -Dport/clhep=ON                       \
-        -Dport/boost=ON                       \
-        -Dport/boost+regex=ON                 \
-        -Dport/camp=ON                        \
-        -Dport/xerces-c=ON                    \
-        -Dport/geant4=ON                      \
-        -Dport/geant4+gdml=ON                 \
-        -Dport/geant4+x11=ON                  \
-        -Dport/geant4+data=ON                 \
-        -Dport/root=ON                        \
-        -Dport/root+x11=ON                    \
-        -Dport/root+asimage=ON                \
-        -Dport/root+mathmore=ON               \
-        -Dport/root+opengl=ON                 \
-        -G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja) \
-        ${aggregator_repo_dir} | tee -a ${aggregator_logfile} 2>&1
-    if $(pkgtools__last_command_fails); then
-        pkgtools__msg_error "Configuration fails!"
-        __pkgtools__at_function_exit
-        return 1
-    fi
 
     __pkgtools__at_function_exit
     return 0
