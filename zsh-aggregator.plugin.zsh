@@ -461,8 +461,11 @@ function __aggregator_configure ()
 {
     __pkgtools__at_function_enter __agregator_configure
 
-    cd ${aggregator_build_dir}
+    if ! ${__aggregator_use_make}; then
+        aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja)"
+    fi
 
+    cd ${aggregator_build_dir}
     cmake                             \
         $(echo ${aggregator_options}) \
         ${aggregator_repo_dir} | tee -a ${aggregator_logfile} 2>&1
@@ -560,9 +563,68 @@ function __aggregator_set_cadfael
         -Dport/root+opengl=ON
     "
 
-    if ! ${__aggregator_use_make}; then
-        aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja)"
-    fi
+    __aggregator_set
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_set_bayeux
+{
+    __pkgtools__at_function_enter __aggregator_set_bayeux
+
+    local cadfael_install_dir=
+    # Retrieve Cadfael information
+    (
+        __aggregator_set_cadfael
+        __aggregator_set
+        cadfael_install_dir=${aggregator_install_dir}
+    )
+
+    aggregator_name="bayeux"
+    aggregator_branch_name="master"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Bayeux"
+    aggregator_options="                                 \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
+        -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
+        -DBayeux_ENABLE_TESTING=ON
+    "
+
+    __aggregator_set
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_set_falaise
+{
+    __pkgtools__at_function_enter __aggregator_set_falaise
+
+    local cadfael_install_dir=
+    # Retrieve Cadfael information
+    (
+        __aggregator_set_cadfael
+        __aggregator_set
+        cadfael_install_dir=${aggregator_install_dir}
+    )
+   local bayeux_install_dir=
+    # Retrieve Cadfael information
+    (
+        __aggregator_set_cadfael
+        __aggregator_set
+        bayeux_install_dir=${aggregator_install_dir}
+    )
+
+    aggregator_name="falaise"
+    aggregator_branch_name="master"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Falaise"
+    aggregator_options="                                                      \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                      \
+        -DCMAKE_PREFIX_PATH=\"${cadfael_install_dir};${bayeux_install_dir}\"  \
+        -DFalaise_ENABLE_TESTING=ON                                           \
+        -DFalaise_BUILD_DOCS=ON                                               \
+        -DFalaise_USE_SYSTEM_BAYEUX=ON
+    "
 
     __aggregator_set
 
