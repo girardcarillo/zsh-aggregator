@@ -587,7 +587,7 @@ function __aggregator_build_cadfael ()
              chmod a+rx ${directory}
          done
 
-         file_list=$(find ${directory_name} -type f -not -wholename '*.git*')
+         file_list=$(find ${install_dir} -type f -not -wholename '*.git*')
          for file in ${=file_list}; do
              file_right=$(stat -c %a "${file}")
              if [ $? -ne 0 ]; then
