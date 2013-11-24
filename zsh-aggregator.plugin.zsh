@@ -507,12 +507,13 @@ function __aggregator_set_cadfael
     aggregator_svn_path="https://svn.lal.in2p3.fr/users/garrido/Workdir/NEMO/SuperNEMO/Cadfael"
     aggregator_options="--with-all             \
                         --without-mysql	       \
-			--without-hdf5	       \
-			--without-systemc      \
-			--without-python       \
-			--root-version 5.34.10 \
-			--boost-version 1.51.0 \
-			--with-test"
+        		--without-hdf5	       \
+        		--without-systemc      \
+        		--without-python       \
+        		--without-gnuplot      \
+        		--root-version 5.34.10 \
+        		--boost-version 1.54.0 \
+        		--with-test"
     aggregator_config_version=""
     __aggregator_set
 
@@ -587,23 +588,23 @@ function __aggregator_build_cadfael ()
              chmod a+rx ${directory}
          done
 
-         file_list=$(find ${install_dir} -type f -not -wholename '*.git*')
-         for file in ${=file_list}; do
-             file_right=$(stat -c %a "${file}")
-             if [ $? -ne 0 ]; then
-                 pkgtools__msg_error "Can't change permission on ${file} file"
-                 __pkgtools__at_function_exit
-                 return 1
-             fi
+         # file_list=$(find ${install_dir} -type f -not -wholename '*.git*')
+         # for file in ${=file_list}; do
+         #     file_right=$(stat -c %a "${file}")
+         #     if [ $? -ne 0 ]; then
+         #         pkgtools__msg_error "Can't change permission on ${file} file"
+         #         __pkgtools__at_function_exit
+         #         return 1
+         #     fi
 
-             owner_right=$((${file_right}/100))
-             # never gives writing rights
-             other_right=$((${owner_right}-2))
-             right=${owner_right}${other_right}${other_right}
+         #     owner_right=$((${file_right}/100))
+         #     # never gives writing rights
+         #     other_right=$((${owner_right}-2))
+         #     right=${owner_right}${other_right}${other_right}
 
-             pkgtools__msg_debug "chmod ${right} ${file}"
-             chmod ${right} ${file}
-         done
+         #     pkgtools__msg_debug "chmod ${right} ${file}"
+         #     chmod ${right} ${file}
+         # done
      )
 
     __pkgtools__at_function_exit
