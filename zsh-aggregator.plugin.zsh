@@ -151,7 +151,7 @@ function aggregator ()
                 ;;
             update)
                 pkgtools__msg_notice "Updating '${icompo}' aggregator"
-                git svn fetch && git svn rebase
+                svn update
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Updating '${icompo}' aggregator fails !"
                     break
@@ -244,7 +244,7 @@ function __aggregator_environment ()
     case "${HOSTNAME}" in
         garrido-laptop)
             nemo_base_dir_tmp="/home/${USER}/Workdir/NEMO"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware_test"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
             nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
@@ -279,7 +279,7 @@ function __aggregator_environment ()
     esac
 
     if env | grep -q "^SNAILWARE_BASE_DIR="; then
-        pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/snware_test"
+        pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/snware"
         pkgtools__set_variable SNAILWARE_DEV_DIR        "$SNAILWARE_BASE_DIR/development"
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "$SNAILWARE_PRO_DIR"
     else
@@ -306,7 +306,7 @@ function __aggregator_source ()
     __pkgtools__at_function_enter __aggregator_source
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
+    local install_dir=${aggregator_base_dir}/install
     # export ${upname}_PREFIX=${install_dir}
     # export ${upname}_INCLUDE_DIR=${install_dir}/include
     # export ${upname}_BIN_DIR=${install_dir}/bin
@@ -356,7 +356,7 @@ function __aggregator_unsource ()
     __pkgtools__at_function_enter __aggregator_unsource
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
+    local install_dir=${aggregator_base_dir}/install
     # unset ${upname}_PREFIX
     # unset ${upname}_INCLUDE_DIR
     # unset ${upname}_LIB_DIR
@@ -396,11 +396,11 @@ function __aggregator_set ()
     if [ ! -d /tmp/${USER} ]; then
         mkdir -p /tmp/${USER}
     fi
-    aggregator_logfile=/tmp/${USER}/${aggregator_name}_${aggregator_branch_name}.log
+    aggregator_logfile=/tmp/${USER}/${aggregator_name}.log
     aggregator_base_dir=${SNAILWARE_PRO_DIR}/${aggregator_name}
     aggregator_repo_dir=${aggregator_base_dir}/repo
-    aggregator_build_dir=${aggregator_base_dir}/build/${aggregator_branch_name}
-    aggregator_install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}
+    aggregator_build_dir=${aggregator_base_dir}/build
+    aggregator_install_dir=${aggregator_base_dir}/install
 
     if [ ! -d ${aggregator_build_dir} ]; then
         mkdir -p ${aggregator_build_dir}
@@ -427,30 +427,14 @@ function __aggregator_get ()
 {
     __pkgtools__at_function_enter __aggregator_get
 
-    if $(pkgtools__has_binary go-svn2git); then
-        pkgtools__msg_notice "Machine has go-svn2git"
-        go-svn2git -username nemo -verbose ${aggregator_svn_path}
+    if $(pkgtools__has_binary svn); then
+        pkgtools__msg_notice "Machine has subversion"
+        svn checkout ${aggregator_svn_path} .
         if $(pkgtools__last_command_fails); then
-            pkgtools__msg_error "Checking fails!"
+            pkgtools__msg_error "Checking out fails!"
             __pkgtools__at_function_exit
             return 1
         fi
-    else
-        pkgtools__msg_notice "Machine does not have go-svn2git"
-        git svn init --prefix=svn/ --username=nemo --trunk=trunk --tags=tags --branches=branches \
-            ${aggregator_svn_path}
-        git svn fetch
-        if $(pkgtools__last_command_fails); then
-            pkgtools__msg_error "Checking fails!"
-            __pkgtools__at_function_exit
-            return 1
-        fi
-    fi
-    git checkout ${aggregator_branch_name}
-    if $(pkgtools__last_command_fails); then
-        pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
-        __pkgtools__at_function_exit
-        return 1
     fi
 
     __pkgtools__at_function_exit
@@ -486,15 +470,21 @@ function __aggregator_build ()
     pkgtools__msg_devel "use make=${__aggregator_use_make}"
     cd ${aggregator_build_dir}
 
+    # Cadfael has no install build command
+    local build_options
+    if [ ${aggregator_name} != cadfael ]; then
+        build_options="install"
+    fi
+
     if ${__aggregator_use_make}; then
-        make install | tee -a ${aggregator_logfile} 2>&1
+        make -j8 ${build_options} | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
             __pkgtools__at_function_exit
             return 1
         fi
     else
-        ninja | tee -a ${aggregator_logfile} 2>&1
+        ninja ${build_options} | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
             __pkgtools__at_function_exit
@@ -523,7 +513,6 @@ function __aggregator_dump ()
 
     pkgtools__msg_notice "Dump aggregator"
     pkgtools__msg_notice " |- name           : ${aggregator_name}"
-    pkgtools__msg_notice " |- branch         : ${aggregator_branch_name}"
     pkgtools__msg_notice " |- repository     : ${aggregator_svn_path}"
     pkgtools__msg_notice " |- options        : ${aggregator_options}"
     pkgtools__msg_notice " |- config version : ${aggregator_config_version}"
@@ -539,8 +528,9 @@ function __aggregator_set_cadfael
     __pkgtools__at_function_enter __aggregator_set_cadfael
 
     aggregator_name="cadfael"
-    aggregator_branch_name="master"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Cadfael"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Cadfael/trunk"
+
+    __aggregator_set
     aggregator_options="                                 \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
         -DCADFAEL_VERBOSE_BUILD=ON                       \
@@ -563,8 +553,6 @@ function __aggregator_set_cadfael
         -Dport/root+opengl=ON
     "
 
-    __aggregator_set
-
     __pkgtools__at_function_exit
     return 0
 }
@@ -573,24 +561,20 @@ function __aggregator_set_bayeux
 {
     __pkgtools__at_function_enter __aggregator_set_bayeux
 
-    local cadfael_install_dir=
     # Retrieve Cadfael information
-    (
-        __aggregator_set_cadfael
-        __aggregator_set
-        cadfael_install_dir=${aggregator_install_dir}
-    )
+    __aggregator_set_cadfael
+    __aggregator_set
+    local cadfael_install_dir=${aggregator_install_dir}
+    pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
 
     aggregator_name="bayeux"
-    aggregator_branch_name="master"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Bayeux"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Bayeux/trunk"
+    __aggregator_set
     aggregator_options="                                 \
-        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
+        -DCMAKE_INSTALL_PREFIX=${cadfael_install_dir}    \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
         -DBayeux_ENABLE_TESTING=ON
     "
-
-    __aggregator_set
 
     __pkgtools__at_function_exit
     return 0
@@ -600,24 +584,19 @@ function __aggregator_set_falaise
 {
     __pkgtools__at_function_enter __aggregator_set_falaise
 
-    local cadfael_install_dir=
     # Retrieve Cadfael information
-    (
-        __aggregator_set_cadfael
-        __aggregator_set
-        cadfael_install_dir=${aggregator_install_dir}
-    )
-   local bayeux_install_dir=
-    # Retrieve Cadfael information
-    (
-        __aggregator_set_cadfael
-        __aggregator_set
-        bayeux_install_dir=${aggregator_install_dir}
-    )
+    __aggregator_set_cadfael
+    __aggregator_set
+    local cadfael_install_dir=${aggregator_install_dir}
+    pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
+    __aggregator_set_bayeux
+    __aggregator_set
+    local bayeux_install_dir=${aggregator_install_dir}
+    pkgtools__msg_devel "bayeux_install_dir=${bayeux_install_dir}"
 
     aggregator_name="falaise"
-    aggregator_branch_name="master"
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Falaise"
+    __aggregator_set
     aggregator_options="                                                      \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                      \
         -DCMAKE_PREFIX_PATH=\"${cadfael_install_dir};${bayeux_install_dir}\"  \
@@ -625,8 +604,6 @@ function __aggregator_set_falaise
         -DFalaise_BUILD_DOCS=ON                                               \
         -DFalaise_USE_SYSTEM_BAYEUX=ON
     "
-
-    __aggregator_set
 
     __pkgtools__at_function_exit
     return 0

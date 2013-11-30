@@ -157,6 +157,8 @@ function _aggregator() {
         '-i[interactive]'
         '-b[batch]'
         '-g[GUI mode]'
+        '--use-make[Using make]'
+        '--use-ninja[Using ninja]'
         '*:: :->subcommand_or_options'
     )
     _arguments -C -s -w ${args} && return
