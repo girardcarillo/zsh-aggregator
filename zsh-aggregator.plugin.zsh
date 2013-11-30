@@ -217,6 +217,11 @@ function aggregator ()
                 ;;
             test)
                 pkgtools__msg_notice "Testing '${icompo}' aggregator"
+                __aggregator_test
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Testing '${icompo}' aggregator fails !"
+                    break
+                fi
                 ;;
         esac
 
@@ -290,12 +295,6 @@ function __aggregator_environment ()
         pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "${nemo_build_dir_tmp}"
     fi
-
-    # Export main env. variables
-    # if $(pkgtools__has_binary ccache); then
-    #     export CXX='ccache g++'
-    #     export CC='ccache gcc'
-    # fi
 
     __pkgtools__at_function_exit
     return 0
@@ -449,6 +448,8 @@ function __aggregator_configure ()
         aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja)"
     fi
 
+    pkgtools__msg_devel "aggregator options=${aggregator_options}"
+
     cd ${aggregator_build_dir}
     cmake                             \
         $(echo ${aggregator_options}) \
@@ -477,7 +478,7 @@ function __aggregator_build ()
     fi
 
     if ${__aggregator_use_make}; then
-        make -j8 ${build_options} | tee -a ${aggregator_logfile} 2>&1
+        make ${build_options} | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
             __pkgtools__at_function_exit
@@ -487,6 +488,33 @@ function __aggregator_build ()
         ninja ${build_options} | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    fi
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_test ()
+{
+    __pkgtools__at_function_enter __aggregator_test
+
+    pkgtools__msg_devel "aggregator build dir=${aggregator_build_dir}"
+    cd ${aggregator_build_dir}
+
+    if ${__aggregator_use_make}; then
+        make test | tee -a ${aggregator_logfile} 2>&1
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Test fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    else
+        ninja test | tee -a ${aggregator_logfile} 2>&1
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Test fails!"
             __pkgtools__at_function_exit
             return 1
         fi
@@ -552,6 +580,10 @@ function __aggregator_set_cadfael
         -Dport/root+mathmore=ON                          \
         -Dport/root+opengl=ON
     "
+    if $(pkgtools__has_binary ccache); then
+        unset CXX
+        unset CC
+    fi
 
     __pkgtools__at_function_exit
     return 0
@@ -573,8 +605,14 @@ function __aggregator_set_bayeux
     aggregator_options="                                 \
         -DCMAKE_INSTALL_PREFIX=${cadfael_install_dir}    \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
-        -DBayeux_ENABLE_TESTING=ON
+        -DBayeux_ENABLE_TESTING=ON                       \
+        -DBayeux_WITH_GEANT4=ON
     "
+
+    if $(pkgtools__has_binary ccache); then
+        export CXX='ccache g++'
+        export CC='ccache gcc'
+    fi
 
     __pkgtools__at_function_exit
     return 0
@@ -595,15 +633,21 @@ function __aggregator_set_falaise
     pkgtools__msg_devel "bayeux_install_dir=${bayeux_install_dir}"
 
     aggregator_name="falaise"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Falaise"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Falaise/trunk"
     __aggregator_set
-    aggregator_options="                                                      \
-        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                      \
-        -DCMAKE_PREFIX_PATH=\"${cadfael_install_dir};${bayeux_install_dir}\"  \
-        -DFalaise_ENABLE_TESTING=ON                                           \
-        -DFalaise_BUILD_DOCS=ON                                               \
+    aggregator_options="                                                 \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                 \
+        -DCMAKE_PREFIX_PATH=${cadfael_install_dir};${bayeux_install_dir} \
+        -DFalaise_ENABLE_TESTING=ON                                      \
+        -DFalaise_BUILD_DOCS=ON                                          \
         -DFalaise_USE_SYSTEM_BAYEUX=ON
     "
+
+    # Use ccache if any
+    if $(pkgtools__has_binary ccache); then
+        export CXX='ccache g++'
+        export CC='ccache gcc'
+    fi
 
     __pkgtools__at_function_exit
     return 0
