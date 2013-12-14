@@ -489,10 +489,9 @@ function __aggregator_set_cadfael
         -Dport/root+mathmore=ON                          \
         -Dport/root+opengl=ON
     "
-    if $(pkgtools__has_binary ccache); then
-        unset CXX
-        unset CC
-    fi
+    unset CXX
+    unset CC
+    __aggregator_use_make=true
 
     __pkgtools__at_function_exit
     return 0
