@@ -11,7 +11,7 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux channel falaise)
 
-typeset -g __aggregator_use_make=true
+typeset -g __aggregator_use_make=false
 
 function aggregator ()
 {
@@ -306,45 +306,9 @@ function __aggregator_source ()
 
     local upname=${aggregator_name:u}
     local install_dir=${aggregator_base_dir}/install
-    # export ${upname}_PREFIX=${install_dir}
-    # export ${upname}_INCLUDE_DIR=${install_dir}/include
-    # export ${upname}_BIN_DIR=${install_dir}/bin
-    # export ${upname}_SHARE_DIR=${install_dir}/share
-    # export ${upname}_ETC_DIR=${install_dir}/etc
 
     # Binaries
     pkgtools__add_path_to_PATH ${install_dir}/bin
-
-    # Librairies
-    # if [ -d ${install_dir}/lib ]; then
-    #     pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib
-    #     pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib
-    # elif [ -d ${install_dir}/lib64 ]; then
-    #     pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib64
-    #     pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib64
-    # fi
-
-    # cmake modules
-    # if [ -d ${install_dir}/share/cmake/Modules ]; then
-    #     export ${upname}_DIR=${install_dir}/share/cmake/Modules
-    #     pkgtools__add_path_to_env_variable CMAKE_MODULE_PATH ${install_dir}/share/cmake/Modules
-    # fi
-
-    # if [ ${aggregator_name} = cadfael ]; then
-    #     pkgtools__set_variable BOOST_ROOT      ${CADFAEL_PREFIX}
-    #     pkgtools__set_variable GEANT4_ROOT_DIR ${CADFAEL_PREFIX}
-    #     pkgtools__set_variable CAMP_DIR        ${CADFAEL_PREFIX}
-    #     pkgtools__set_variable CAMP_LIBRARIES  ${CADFAEL_LIB_DIR}
-    #     pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
-    # else
-    #     for i in ${install_dir}/share/*
-    #     do
-    #         local base=$(basename $i)
-    #         local upbase=${base:u}
-    #         export ${upbase}_DATA_DIR=${install_dir}/share/${base}
-    #         unset base upbase
-    #     done
-    # fi
 
     __pkgtools__at_function_exit
     return 0
@@ -356,31 +320,8 @@ function __aggregator_unsource ()
 
     local upname=${aggregator_name:u}
     local install_dir=${aggregator_base_dir}/install
-    # unset ${upname}_PREFIX
-    # unset ${upname}_INCLUDE_DIR
-    # unset ${upname}_LIB_DIR
-    # unset ${upname}_BIN_DIR
-    # unset ${upname}_SHARE_DIR
-    # unset ${upname}_ETC_DIR
-    # unset ${upname}_DIR
 
     pkgtools__remove_path_to_PATH ${install_dir}/bin
-    # pkgtools__remove_path_to_LD_LIBRARY_PATH ${install_dir}/lib
-    # pkgtools__remove_path_to_env_variable CMAKE_MODULE_PATH ${install_dir}/share/cmake/Modules
-
-    # if [ ${aggregator_name} = cadfael ]; then
-    #     unset BOOST_ROOT
-    #     unset GEANT4_ROOT_DIR
-    #     pkgtools__remove_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
-    # else
-    #     for i in ${install_dir}/share/*
-    #     do
-    #         local base=$(basename $i)
-    #         local upbase=${base:u}
-    #         unset ${upbase}_DATA_DIR
-    #         unset base upbase
-    #     done
-    # fi
 
     __pkgtools__at_function_exit
     return 0
@@ -603,7 +544,7 @@ function __aggregator_set_bayeux
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Bayeux/trunk"
     __aggregator_set
     aggregator_options="                                 \
-        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}    \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
         -DBayeux_ENABLE_TESTING=ON                       \
         -DBayeux_WITH_GEANT4=ON
