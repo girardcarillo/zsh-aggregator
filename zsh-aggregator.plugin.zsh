@@ -521,6 +521,7 @@ function __aggregator_set_bayeux
         export CXX='ccache g++'
         export CC='ccache gcc'
     fi
+    __aggregator_use_make=false
 
     __pkgtools__at_function_exit
     return 0
@@ -556,6 +557,7 @@ function __aggregator_set_falaise
         export CXX='ccache g++'
         export CC='ccache gcc'
     fi
+    __aggregator_use_make=false
 
     __pkgtools__at_function_exit
     return 0
