@@ -327,6 +327,7 @@ function __aggregator_source ()
     if [ ${aggregator_name} = cadfael ]; then
         pkgtools__set_variable BOOST_ROOT      ${CADFAEL_PREFIX}
         pkgtools__set_variable GEANT4_ROOT_DIR ${CADFAEL_PREFIX}
+        pkgtools__set_variable G4LEDATA        ${CADFAEL_SHARE_DIR}/Geant4-9.6.1/data/G4EMLOW6.32
         pkgtools__set_variable CAMP_DIR        ${CADFAEL_PREFIX}
         pkgtools__set_variable CAMP_LIBRARIES  ${CADFAEL_LIB_DIR}
         pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
@@ -511,8 +512,6 @@ function __aggregator_set_cadfael
         		--without-systemc      \
         		--without-python       \
         		--without-gnuplot      \
-        		--root-version 5.34.10 \
-        		--boost-version 1.54.0 \
         		--with-test"
     aggregator_config_version=""
     __aggregator_set
