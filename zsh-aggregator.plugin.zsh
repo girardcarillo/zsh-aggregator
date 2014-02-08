@@ -511,8 +511,17 @@ function __aggregator_set_cadfael
         		--without-hdf5	       \
         		--without-systemc      \
         		--without-python       \
-        		--without-gnuplot      \
         		--with-test"
+
+        case "${HOSTNAME}" in
+        garrido-laptop)
+                aggregator_options+=" --without-gnuplot"
+                ;;
+        lx3.lal.in2p3.fr|nemo*.lal.in2p3.fr)
+                aggregator_options+=" --with-gnuplot"
+                ;;
+        esac
+
     aggregator_config_version=""
     __aggregator_set
 
