@@ -183,7 +183,6 @@ function aggregator ()
                 ;;
             build)
                 pkgtools__msg_notice "Building '${icompo}' aggregator"
-                __aggregator_get
                 __aggregator_configure
                 __aggregator_build
                 if $(pkgtools__last_command_fails); then
@@ -336,13 +335,17 @@ function __aggregator_get ()
     __pkgtools__at_function_enter __aggregator_get
 
     if $(pkgtools__has_binary svn); then
-        pkgtools__msg_notice "Machine has subversion"
+        pkgtools__msg_debug "Machine has subversion"
         svn checkout ${aggregator_svn_path} .
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Checking out fails!"
             __pkgtools__at_function_exit
             return 1
         fi
+    else
+        pkgtools__msg_warning "Machine has no subversion installed"
+        __pkgtools__at_function_exit
+        return 1
     fi
 
     __pkgtools__at_function_exit
