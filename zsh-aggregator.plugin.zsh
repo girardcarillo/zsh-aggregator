@@ -151,7 +151,7 @@ function aggregator ()
                 ;;
             update)
                 pkgtools__msg_notice "Updating '${icompo}' aggregator"
-                svn update
+                __aggregator_update
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Updating '${icompo}' aggregator fails !"
                     break
@@ -334,11 +334,110 @@ function __aggregator_get ()
 {
     __pkgtools__at_function_enter __aggregator_get
 
-    if $(pkgtools__has_binary svn); then
+    if $(pkgtools__has_binary go-svn2git); then
+        pkgtools__msg_debug "Machine has go-svn2git"
+        go-svn2git -username ${USER} -verbose ${aggregator_svn_path/trunk/}
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Checking out fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+        if [ ${icompo} = bayeux ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            components=(datatools
+                mygsl
+                materials
+                geomtools
+                brio
+                cuts
+                genvtx
+                emfield
+                dpp
+                genbb_help
+                mctools
+            )
+            for jcompo in ${=components}
+            do
+                pkgtools__msg_notice "Getting external component ${jcompo}"
+                (
+                    cd ${aggregator_repo_dir}/source && mkdir -p bx${jcompo}
+                    cd bx${jcompo}
+                    go-svn2git -username ${USER} -verbose \
+                        https://nemo.lpc-caen.in2p3.fr/svn/${jcompo}
+                    if $(pkgtools__last_command_fails); then
+                        pkgtools__msg_error "Checking out fails!"
+                        __pkgtools__at_function_exit
+                        return 1
+                    fi
+                )
+            done
+
+        fi
+    elif $(pkgtools__has_binary svn); then
         pkgtools__msg_debug "Machine has subversion"
         svn checkout ${aggregator_svn_path} .
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Checking out fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    else
+        pkgtools__msg_warning "Machine has no subversion installed"
+        __pkgtools__at_function_exit
+        return 1
+    fi
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_update ()
+{
+    __pkgtools__at_function_enter __aggregator_update
+
+    if $(pkgtools__has_binary go-svn2git); then
+        pkgtools__msg_debug "Machine has go-svn2git"
+        git svn fetch
+        git svn rebase
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Updating fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+        if [ ${icompo} = bayeux ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            components=(datatools
+                mygsl
+                materials
+                geomtools
+                brio
+                cuts
+                genvtx
+                emfield
+                dpp
+                genbb_help
+                mctools
+            )
+            for jcompo in ${=components}
+            do
+                pkgtools__msg_notice "Updating external component ${jcompo}"
+                (
+                    cd ${aggregator_repo_dir}/source/bx${jcompo}
+                    git svn fetch
+                    git svn rebase
+                    if $(pkgtools__last_command_fails); then
+                        pkgtools__msg_error "Updating ${jcompo} fails!"
+                        __pkgtools__at_function_exit
+                        return 1
+                    fi
+                )
+            done
+        fi
+    elif $(pkgtools__has_binary svn); then
+        pkgtools__msg_debug "Machine has subversion"
+        svn update
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Updating fails!"
             __pkgtools__at_function_exit
             return 1
         fi
