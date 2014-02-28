@@ -371,7 +371,20 @@ function __aggregator_get ()
                     fi
                 )
             done
-
+        elif [ ${icompo} = falaise ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            pkgtools__msg_notice "Getting external component CAT"
+            (
+                cd ${aggregator_repo_dir}/modules/CAT && mkdir -p CellularAutomatonTracker
+                cd CellularAutomatonTracker
+                go-svn2git -username ${USER} -verbose \
+                    https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Channel/Components/CellularAutomatonTracker
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Getting CAT fails!"
+                    __pkgtools__at_function_exit
+                    return 1
+                fi
+            )
         fi
     elif $(pkgtools__has_binary svn); then
         pkgtools__msg_debug "Machine has subversion"
@@ -432,6 +445,19 @@ function __aggregator_update ()
                     fi
                 )
             done
+        elif [ ${icompo} = falaise ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            pkgtools__msg_notice "Updating external component CAT"
+            (
+                cd ${aggregator_repo_dir}/modules/CAT
+                git svn fetch
+                git svn rebase
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Updating CAT fails!"
+                    __pkgtools__at_function_exit
+                    return 1
+                fi
+            )
         fi
     elif $(pkgtools__has_binary svn); then
         pkgtools__msg_debug "Machine has subversion"
