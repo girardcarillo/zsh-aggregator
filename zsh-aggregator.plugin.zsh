@@ -9,7 +9,7 @@
 
 # Aggregator bundles
 typeset -ga __aggregator_bundles
-__aggregator_bundles=(cadfael bayeux channel falaise)
+__aggregator_bundles=(cadfael bayeux falaise)
 
 typeset -g __aggregator_use_make=false
 
@@ -110,7 +110,8 @@ function aggregator ()
     for icompo in ${=append_list_of_components_arg}
     do
         if [ ${icompo} = all ]; then
-            aggregator ${append_list_of_options_arg} ${mode} ${__aggregator_bundles}
+            aggregator ${append_list_of_options_arg} ${mode} bayeux falaise
+            #${__aggregator_bundles}
             continue
         fi
 
