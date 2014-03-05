@@ -250,6 +250,7 @@ function __aggregator_environment ()
         garrido-laptop)
             nemo_base_dir_tmp="/home/${USER}/Workdir/NEMO"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/new_snware"
+            nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
             nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
             ;;
     esac
@@ -262,6 +263,7 @@ function __aggregator_environment ()
         pkgtools__set_variable SNAILWARE_BASE_DIR       "${nemo_base_dir_tmp}"
         pkgtools__set_variable SNAILWARE_PRO_DIR        "${nemo_pro_dir_tmp}"
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "${nemo_build_dir_tmp}"
+        pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
     fi
 
     __pkgtools__at_function_exit
