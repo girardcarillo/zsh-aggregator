@@ -680,7 +680,8 @@ function __aggregator_set_falaise
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir};${bayeux_install_dir} \
         -DFalaise_ENABLE_TESTING=ON                                      \
         -DFalaise_BUILD_DOCS=ON                                          \
-        -DFalaise_USE_SYSTEM_BAYEUX=ON
+        -DFalaise_USE_SYSTEM_BAYEUX=ON                                   \
+        -DFalaise_BUILD_DEVELOPER_TOOLS=ON
     "
 
     # Use ccache if any
