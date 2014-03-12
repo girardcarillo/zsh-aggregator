@@ -452,7 +452,7 @@ function __aggregator_update ()
             pkgtools__msg_debug "Component ${icompo}"
             pkgtools__msg_notice "Updating external component CAT"
             (
-                cd ${aggregator_repo_dir}/modules/CAT
+                cd ${aggregator_repo_dir}/modules/CAT/CellularAutomatonTracker
                 git svn fetch
                 git svn rebase
                 if $(pkgtools__last_command_fails); then
