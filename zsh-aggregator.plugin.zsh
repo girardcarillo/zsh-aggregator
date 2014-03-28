@@ -160,7 +160,7 @@ function aggregator ()
                 ;;
             setup)
                 pkgtools__msg_notice "Sourcing '${icompo}' aggregator"
-                __aggregator_source
+                __aggregator_setup
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Sourcing '${icompo}' aggregator fails !"
                     break
@@ -168,7 +168,7 @@ function aggregator ()
                 ;;
             unsetup)
                 pkgtools__msg_notice "Un-Sourcing '${icompo}' aggregator"
-                __aggregator_unsource
+                __aggregator_unsetup
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Un-Sourcing '${icompo}' aggregator fails !"
                     break
@@ -201,7 +201,7 @@ function aggregator ()
                 ;;
             reset)
                 pkgtools__msg_notice "Reseting '${icompo}' aggregator"
-                __aggregator_unsource
+                __aggregator_unsetup
                 __aggregator_remove
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Reseting '${icompo}' aggregator fails !"
@@ -270,9 +270,9 @@ function __aggregator_environment ()
     return 0
 }
 
-function __aggregator_source ()
+function __aggregator_setup ()
 {
-    __pkgtools__at_function_enter __aggregator_source
+    __pkgtools__at_function_enter __aggregator_setup
 
     local upname=${aggregator_name:u}
     local install_dir=${aggregator_base_dir}/install
@@ -284,9 +284,9 @@ function __aggregator_source ()
     return 0
 }
 
-function __aggregator_unsource ()
+function __aggregator_unsetup ()
 {
-    __pkgtools__at_function_enter __aggregator_unsource
+    __pkgtools__at_function_enter __aggregator_unsetup
 
     local upname=${aggregator_name:u}
     local install_dir=${aggregator_base_dir}/install
