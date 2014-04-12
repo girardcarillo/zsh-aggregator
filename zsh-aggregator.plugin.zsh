@@ -11,8 +11,6 @@
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux falaise)
 
-typeset -g __aggregator_use_make=false
-
 function aggregator ()
 {
     __pkgtools__default_values
@@ -21,6 +19,8 @@ function aggregator ()
     local mode
     local append_list_of_options_arg
     local append_list_of_components_arg
+    local use_make=false
+    local with_test=false
 
     while [ -n "$1" ]; do
         local token="$1"
@@ -46,10 +46,14 @@ function aggregator ()
 	        pkgtools__ui_batch
 	    elif [ "${opt}" = "--gui" ]; then
 	        pkgtools__ui_using_gui
+            elif [ "${opt}" = "--with-test" ]; then
+	        with_test=true
+            elif [ "${opt}" = "--without-test" ]; then
+	        with_test=false
             elif [ "${opt}" = "--use-make" ]; then
-                __aggregator_use_make=true
+                use_make=true
             elif [ "${opt}" = "--use-ninja" ]; then
-                __aggregator_use_make=false
+                use_make=false
             fi
         else
             if [ "${token}" = "environment" ]; then
@@ -229,6 +233,7 @@ function aggregator ()
     done
 
     unset mode append_list_of_components_arg append_list_of_options_arg
+    unset with_test use_make
     __pkgtools__default_values
     __pkgtools__at_function_exit
     return 0
@@ -321,7 +326,7 @@ function __aggregator_set ()
         mkdir -p ${aggregator_repo_dir}
     fi
 
-    if ! ${__aggregator_use_make}; then
+    if ! ${use_make}; then
         if ! $(pkgtools__has_binary ninja); then
             pkgtools__msg_error "Ninja binary has not been found !"
             __pkgtools__at_function_exit
@@ -644,9 +649,13 @@ function __aggregator_set_bayeux
     aggregator_options="                                 \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
-        -DBayeux_ENABLE_TESTING=ON                       \
         -DBayeux_WITH_GEANT4=ON
     "
+    if ${with_test}; then
+        aggregator_options+="-DBayeux_ENABLE_TESTING=ON "
+    else
+        aggregator_options+="-DBayeux_ENABLE_TESTING=OFF "
+    fi
 
     if $(pkgtools__has_binary ccache); then
         export CXX='ccache g++'
@@ -678,11 +687,15 @@ function __aggregator_set_falaise
     aggregator_options="                                                 \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                 \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir};${bayeux_install_dir} \
-        -DFalaise_ENABLE_TESTING=ON                                      \
         -DFalaise_BUILD_DOCS=ON                                          \
         -DFalaise_USE_SYSTEM_BAYEUX=ON                                   \
         -DFalaise_BUILD_DEVELOPER_TOOLS=ON
     "
+    if ${with_test}; then
+        aggregator_options+="-DFalaise_ENABLE_TESTING=ON "
+    else
+        aggregator_options+="-DFalaise_ENABLE_TESTING=OFF "
+    fi
 
     # Use ccache if any
     if $(pkgtools__has_binary ccache); then
