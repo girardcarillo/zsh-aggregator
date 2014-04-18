@@ -114,8 +114,7 @@ function aggregator ()
     for icompo in ${=append_list_of_components_arg}
     do
         if [ ${icompo} = all ]; then
-            aggregator ${append_list_of_options_arg} ${mode} bayeux falaise
-            #${__aggregator_bundles}
+            aggregator ${append_list_of_options_arg} ${mode} ${__aggregator_bundles}
             continue
         fi
 
@@ -270,6 +269,11 @@ function __aggregator_environment ()
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "${nemo_build_dir_tmp}"
         pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
     fi
+
+    #compdef _gnu_generic bxdpp_processing
+    compdef _genbb_inspector bxgenbb_inspector
+    compdef _dpp_processing  bxdpp_processing
+    compdef _ocd_manual      bxocd_manual
 
     __pkgtools__at_function_exit
     return 0
@@ -489,7 +493,7 @@ function __aggregator_configure ()
 {
     __pkgtools__at_function_enter __agregator_configure
 
-    if ! ${__aggregator_use_make}; then
+    if ! ${use_make}; then
         aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja)"
     fi
 
@@ -513,7 +517,7 @@ function __aggregator_build ()
 {
     __pkgtools__at_function_enter __aggregator_build
 
-    pkgtools__msg_devel "use make=${__aggregator_use_make}"
+    pkgtools__msg_devel "use make=${use_make}"
     cd ${aggregator_build_dir}
 
     # Cadfael has no install build command
@@ -522,7 +526,7 @@ function __aggregator_build ()
         build_options="install"
     fi
 
-    if ${__aggregator_use_make}; then
+    if ${use_make}; then
         make ${build_options} | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
@@ -549,7 +553,7 @@ function __aggregator_test ()
     pkgtools__msg_devel "aggregator build dir=${aggregator_build_dir}"
     cd ${aggregator_build_dir}
 
-    if ${__aggregator_use_make}; then
+    if ${use_make}; then
         make test | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Test fails!"
@@ -627,7 +631,7 @@ function __aggregator_set_cadfael
     "
     unset CXX
     unset CC
-    __aggregator_use_make=true
+    use_make=true
 
     __pkgtools__at_function_exit
     return 0
@@ -661,7 +665,7 @@ function __aggregator_set_bayeux
         export CXX='ccache g++'
         export CC='ccache gcc'
     fi
-    __aggregator_use_make=false
+    use_make=false
 
     __pkgtools__at_function_exit
     return 0
@@ -702,7 +706,7 @@ function __aggregator_set_falaise
         export CXX='ccache g++'
         export CC='ccache gcc'
     fi
-    __aggregator_use_make=false
+    use_make=false
 
     __pkgtools__at_function_exit
     return 0
