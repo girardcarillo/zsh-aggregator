@@ -187,7 +187,6 @@ function aggregator ()
                 ;;
             build)
                 pkgtools__msg_notice "Building '${icompo}' aggregator"
-                __aggregator_configure
                 __aggregator_build
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Building '${icompo}' aggregator fails !"
