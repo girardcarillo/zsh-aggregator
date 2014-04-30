@@ -10,6 +10,7 @@
 # Aggregator bundles
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux falaise)
+typeset -g __aggregator_use_make=false
 
 function aggregator ()
 {
@@ -19,7 +20,6 @@ function aggregator ()
     local mode
     local append_list_of_options_arg
     local append_list_of_components_arg
-    local use_make=false
     local with_test=false
 
     while [ -n "$1" ]; do
@@ -51,9 +51,9 @@ function aggregator ()
             elif [ "${opt}" = "--without-test" ]; then
 	        with_test=false
             elif [ "${opt}" = "--use-make" ]; then
-                use_make=true
+                __aggregator_use_make=true
             elif [ "${opt}" = "--use-ninja" ]; then
-                use_make=false
+                __aggregator_use_make=false
             fi
         else
             if [ "${token}" = "environment" ]; then
@@ -231,7 +231,7 @@ function aggregator ()
     done
 
     unset mode append_list_of_components_arg append_list_of_options_arg
-    unset with_test use_make
+    unset with_test
     __pkgtools__default_values
     __pkgtools__at_function_exit
     return 0
@@ -329,7 +329,7 @@ function __aggregator_set ()
         mkdir -p ${aggregator_repo_dir}
     fi
 
-    if ! ${use_make}; then
+    if ! ${__aggregagtor_use_make}; then
         if ! $(pkgtools__has_binary ninja); then
             pkgtools__msg_error "Ninja binary has not been found !"
             __pkgtools__at_function_exit
@@ -492,7 +492,7 @@ function __aggregator_configure ()
 {
     __pkgtools__at_function_enter __agregator_configure
 
-    if ! ${use_make}; then
+    if ! ${__aggregator_use_make}; then
         aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja)"
     fi
 
@@ -516,7 +516,7 @@ function __aggregator_build ()
 {
     __pkgtools__at_function_enter __aggregator_build
 
-    pkgtools__msg_devel "use make=${use_make}"
+    pkgtools__msg_devel "use make=${__aggregator_use_make}"
     cd ${aggregator_build_dir}
 
     # Cadfael has no install build command
@@ -525,7 +525,7 @@ function __aggregator_build ()
         build_options="install"
     fi
 
-    if ${use_make}; then
+    if ${__aggregator_use_make}; then
         make ${build_options} | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
@@ -552,7 +552,7 @@ function __aggregator_test ()
     pkgtools__msg_devel "aggregator build dir=${aggregator_build_dir}"
     cd ${aggregator_build_dir}
 
-    if ${use_make}; then
+    if ${__aggregator_use_make}; then
         make test | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Test fails!"
@@ -630,7 +630,7 @@ function __aggregator_set_cadfael
     "
     unset CXX
     unset CC
-    use_make=true
+    __aggregator_use_make=true
 
     __pkgtools__at_function_exit
     return 0
@@ -664,7 +664,6 @@ function __aggregator_set_bayeux
         export CXX='ccache g++'
         export CC='ccache gcc'
     fi
-    use_make=false
 
     __pkgtools__at_function_exit
     return 0
@@ -705,7 +704,6 @@ function __aggregator_set_falaise
         export CXX='ccache g++'
         export CC='ccache gcc'
     fi
-    use_make=false
 
     __pkgtools__at_function_exit
     return 0
