@@ -21,6 +21,7 @@ function aggregator ()
     local append_list_of_options_arg
     local append_list_of_components_arg
     local with_test=false
+    local with_doc=true
 
     while [ -n "$1" ]; do
         local token="$1"
@@ -50,6 +51,10 @@ function aggregator ()
 	        with_test=true
             elif [ "${opt}" = "--without-test" ]; then
 	        with_test=false
+            elif [ "${opt}" = "--with-doc" ]; then
+	        with_doc=true
+            elif [ "${opt}" = "--without-doc" ]; then
+	        with_doc=false
             elif [ "${opt}" = "--use-make" ]; then
                 __aggregator_use_make=true
             elif [ "${opt}" = "--use-ninja" ]; then
@@ -255,6 +260,13 @@ function __aggregator_environment ()
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/new_snware"
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
             nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
+            ;;
+        ccige*|ccage*)
+            nemo_base_dir_tmp="/sps/nemo/scratch/${USER}/workdir"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
+            nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
+            nemo_simulation_dir_tmp="/sps/nemo/scratch/${USER}/simulations"
+            nemo_build_dir_tmp="/scratch/${USER}/snware"
             ;;
     esac
 
@@ -689,10 +701,14 @@ function __aggregator_set_falaise
     aggregator_options="                                                 \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                 \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir};${bayeux_install_dir} \
-        -DFalaise_BUILD_DOCS=ON                                          \
         -DFalaise_USE_SYSTEM_BAYEUX=ON                                   \
         -DFalaise_BUILD_DEVELOPER_TOOLS=ON
     "
+    if ${with_doc}; then
+        aggregator_options+="-DFalaise_BUILD_DOCS=ON "
+    else
+        aggregator_options+="-DFalaise_BUILD_DOCS=OFF "
+    fi
     if ${with_test}; then
         aggregator_options+="-DFalaise_ENABLE_TESTING=ON "
     else
