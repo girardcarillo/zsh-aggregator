@@ -642,7 +642,6 @@ function __aggregator_set_cadfael
     "
     unset CXX
     unset CC
-    __aggregator_use_make=true
 
     __pkgtools__at_function_exit
     return 0
