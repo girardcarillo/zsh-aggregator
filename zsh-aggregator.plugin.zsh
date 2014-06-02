@@ -284,11 +284,11 @@ function __aggregator_environment ()
     fi
 
     # Export main env. variables
-    which ccache > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        export CXX="ccache g++"
-        export CC="ccache gcc"
-    fi
+    # which ccache > /dev/null 2>&1
+    # if [ $? -eq 0 ]; then
+    #     export CXX="ccache g++"
+    #     export CC="ccache gcc"
+    # fi
 
     __pkgtools__at_function_exit
     return 0
