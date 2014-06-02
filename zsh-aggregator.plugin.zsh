@@ -236,7 +236,7 @@ function __aggregator_environment ()
     case "${HOSTNAME}" in
         garrido-laptop)
             nemo_base_dir_tmp="/home/${USER}/Workdir/NEMO"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
             nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
