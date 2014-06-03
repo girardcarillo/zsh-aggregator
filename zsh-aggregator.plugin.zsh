@@ -661,6 +661,7 @@ function __aggregator_set_bayeux
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Bayeux/trunk"
     __aggregator_set
     aggregator_options="                                 \
+        -DCMAKE_BUILD_TYPE:STRING=Release                \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
         -DBayeux_WITH_GEANT4=ON
@@ -698,6 +699,7 @@ function __aggregator_set_falaise
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Falaise/trunk"
     __aggregator_set
     aggregator_options="                                                 \
+        -DCMAKE_BUILD_TYPE:STRING=Release                                \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                 \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir};${bayeux_install_dir} \
         -DFalaise_USE_SYSTEM_BAYEUX=ON                                   \
