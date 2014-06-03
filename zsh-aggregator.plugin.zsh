@@ -538,7 +538,7 @@ function __aggregator_build ()
     fi
 
     if ${__aggregator_use_make}; then
-        make ${build_options} | tee -a ${aggregator_logfile} 2>&1
+        make -j$(nproc) ${build_options} | tee -a ${aggregator_logfile} 2>&1
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
             __pkgtools__at_function_exit
