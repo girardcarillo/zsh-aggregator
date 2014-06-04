@@ -9,7 +9,8 @@
 
 # Aggregator bundles
 typeset -ga __aggregator_bundles
-__aggregator_bundles=(cadfael bayeux channel falaise chevreuse)
+__aggregator_bundles=(cadfael bayeux falaise)
+typeset -g __aggregator_use_make=false
 
 function aggregator ()
 {
@@ -19,6 +20,8 @@ function aggregator ()
     local mode
     local append_list_of_options_arg
     local append_list_of_components_arg
+    local with_test=false
+    local with_doc=true
 
     while [ -n "$1" ]; do
         local token="$1"
@@ -44,7 +47,19 @@ function aggregator ()
 	        pkgtools__ui_batch
 	    elif [ "${opt}" = "--gui" ]; then
 	        pkgtools__ui_using_gui
-           fi
+            elif [ "${opt}" = "--with-test" ]; then
+	        with_test=true
+            elif [ "${opt}" = "--without-test" ]; then
+	        with_test=false
+            elif [ "${opt}" = "--with-doc" ]; then
+	        with_doc=true
+            elif [ "${opt}" = "--without-doc" ]; then
+	        with_doc=false
+            elif [ "${opt}" = "--use-make" ]; then
+                __aggregator_use_make=true
+            elif [ "${opt}" = "--use-ninja" ]; then
+                __aggregator_use_make=false
+            fi
         else
             if [ "${token}" = "environment" ]; then
                 mode="environment"
@@ -62,8 +77,6 @@ function aggregator ()
                 mode="unsetup"
             elif [ "${token}" = "test" ]; then
                 mode="test"
-            elif [ "${token}" = "svn-diff" ]; then
-                mode="svn-diff"
             elif [ "${token}" = "checkout" ]; then
                 mode="checkout"
             elif [ "${token}" = "dump" ]; then
@@ -121,13 +134,13 @@ function aggregator ()
 
         # Look for the corresponding directory
         pkgtools__msg_devel "repository=${SNAILWARE_PRO_DIR}/${icompo}/repo"
-        local is_found=0
-        pushd ${SNAILWARE_PRO_DIR}/${icompo}/repo > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            is_found=1
+        local is_found=false
+        pushd ${aggregator_repo_dir} > /dev/null 2>&1
+        if $(pkgtools__last_command_succeeds); then
+            is_found=true
         fi
 
-        if [ ${is_found} -eq 0 ]; then
+        if ! ${is_found}; then
             pkgtools__msg_error "Repository of '${icompo}' does not exist!"
             continue
         elif [ ${mode} = goto ]; then
@@ -139,62 +152,65 @@ function aggregator ()
         case ${mode} in
             checkout)
                 pkgtools__msg_notice "Getting '${icompo}' aggregator"
-                __aggregator_get_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_get
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Getting '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             update)
                 pkgtools__msg_notice "Updating '${icompo}' aggregator"
-                git svn fetch
-                git svn rebase
-                if [ $? -ne 0 ]; then
+                __aggregator_update
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Updating '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             setup)
                 pkgtools__msg_notice "Sourcing '${icompo}' aggregator"
-                __aggregator_source_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_setup
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Sourcing '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             unsetup)
                 pkgtools__msg_notice "Un-Sourcing '${icompo}' aggregator"
-                __aggregator_unsource_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_unsetup
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Un-Sourcing '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             configure)
                 pkgtools__msg_notice "Configuring '${icompo}' aggregator"
-                __aggregator_set_${icompo}
+                __aggregator_configure
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Configuring '${icompo}' aggregator fails !"
+                    break
+                fi
                 ;;
             build)
                 pkgtools__msg_notice "Building '${icompo}' aggregator"
-                __aggregator_build_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_build
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Building '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             dump)
                 pkgtools__msg_notice "Dumping '${icompo}' aggregator"
-                __aggregator_dump_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_dump
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Dumping '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
             reset)
                 pkgtools__msg_notice "Reseting '${icompo}' aggregator"
-                __aggregator_unsource_${icompo}
-                __aggregator_remove_${icompo}
-                if [ $? -ne 0 ]; then
+                __aggregator_unsetup
+                __aggregator_remove
+                if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Reseting '${icompo}' aggregator fails !"
                     break
                 fi
@@ -208,15 +224,20 @@ function aggregator ()
                 ;;
             test)
                 pkgtools__msg_notice "Testing '${icompo}' aggregator"
-                ./pkgtools.d/pkgtool test
-                 ;;
+                __aggregator_test
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Testing '${icompo}' aggregator fails !"
+                    break
+                fi
+                ;;
         esac
 
         popd > /dev/null 2>&1
     done
 
     unset mode append_list_of_components_arg append_list_of_options_arg
-
+    unset with_test
+    __pkgtools__default_values
     __pkgtools__at_function_exit
     return 0
 
@@ -236,7 +257,7 @@ function __aggregator_environment ()
     case "${HOSTNAME}" in
         garrido-laptop)
             nemo_base_dir_tmp="/home/${USER}/Workdir/NEMO"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
             nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
@@ -248,25 +269,12 @@ function __aggregator_environment ()
             nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
             nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
             ;;
-        lx3.lal.in2p3.fr|nemo*.lal.in2p3.fr)
-            nemo_base_dir_tmp="/exp/nemo/snsw"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
-            nemo_dev_dir_tmp="/exp/nemo/${USER}/workdir/supernemo/development"
-            nemo_simulation_dir_tmp="/exp/nemo/${USER}/workdir/supernemo/simulations"
-            nemo_build_dir_tmp="/scratch/${USER}/snware"
-            ;;
         ccige*|ccage*)
             nemo_base_dir_tmp="/sps/nemo/scratch/${USER}/workdir"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
             nemo_simulation_dir_tmp="/sps/nemo/scratch/${USER}/simulations"
             nemo_build_dir_tmp="/scratch/${USER}/snware"
-            ;;
-        *)
-            nemo_base_dir_tmp="/home/${USER}/Workdir"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
-            nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
-            nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
             ;;
     esac
 
@@ -278,104 +286,36 @@ function __aggregator_environment ()
         # Export only if it is not already exported
         pkgtools__set_variable SNAILWARE_BASE_DIR       "${nemo_base_dir_tmp}"
         pkgtools__set_variable SNAILWARE_PRO_DIR        "${nemo_pro_dir_tmp}"
-        pkgtools__set_variable SNAILWARE_DEV_DIR        "${nemo_dev_dir_tmp}"
-        pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
         pkgtools__set_variable SNAILWARE_BUILD_DIR      "${nemo_build_dir_tmp}"
+        pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
     fi
-
-    # Export main env. variables
-    # which ccache > /dev/null 2>&1
-    # if [ $? -eq 0 ]; then
-    #     export CXX="ccache g++"
-    #     export CC="ccache gcc"
-    # fi
 
     __pkgtools__at_function_exit
     return 0
 }
 
-function __aggregator_source ()
+function __aggregator_setup ()
 {
-    __pkgtools__at_function_enter __aggregator_source
+    __pkgtools__at_function_enter __aggregator_setup
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
-    export ${upname}_PREFIX=${install_dir}
-    export ${upname}_INCLUDE_DIR=${install_dir}/include
-    export ${upname}_BIN_DIR=${install_dir}/bin
-    export ${upname}_SHARE_DIR=${install_dir}/share
-    export ${upname}_ETC_DIR=${install_dir}/etc
+    local install_dir=${aggregator_base_dir}/install
 
     # Binaries
     pkgtools__add_path_to_PATH ${install_dir}/bin
 
-    # Librairies
-    if [ -d ${install_dir}/lib ]; then
-        pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib
-        pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib
-    elif [ -d ${install_dir}/lib64 ]; then
-        pkgtools__set_variable ${upname}_LIB_DIR ${install_dir}/lib64
-        pkgtools__add_path_to_LD_LIBRARY_PATH ${install_dir}/lib64
-    fi
-
-    # cmake modules
-    if [ -d ${install_dir}/share/cmake/Modules ]; then
-        export ${upname}_DIR=${install_dir}/share/cmake/Modules
-        pkgtools__add_path_to_env_variable CMAKE_MODULE_PATH ${install_dir}/share/cmake/Modules
-    fi
-
-    if [ ${aggregator_name} = cadfael ]; then
-        pkgtools__set_variable BOOST_ROOT      ${CADFAEL_PREFIX}
-        pkgtools__set_variable GEANT4_ROOT_DIR ${CADFAEL_PREFIX}
-        pkgtools__set_variable G4LEDATA        ${CADFAEL_SHARE_DIR}/Geant4-9.6.1/data/G4EMLOW6.32
-        pkgtools__set_variable CAMP_DIR        ${CADFAEL_PREFIX}
-        pkgtools__set_variable CAMP_LIBRARIES  ${CADFAEL_LIB_DIR}
-        pkgtools__add_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
-    else
-        for i in ${install_dir}/share/*
-        do
-            local base=$(basename $i)
-            local upbase=${base:u}
-            export ${upbase}_DATA_DIR=${install_dir}/share/${base}
-            unset base upbase
-        done
-    fi
-
     __pkgtools__at_function_exit
     return 0
 }
 
-function __aggregator_unsource ()
+function __aggregator_unsetup ()
 {
-    __pkgtools__at_function_enter __aggregator_unsource
+    __pkgtools__at_function_enter __aggregator_unsetup
 
     local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
-    unset ${upname}_PREFIX
-    unset ${upname}_INCLUDE_DIR
-    unset ${upname}_LIB_DIR
-    unset ${upname}_BIN_DIR
-    unset ${upname}_SHARE_DIR
-    unset ${upname}_ETC_DIR
-    unset ${upname}_DIR
+    local install_dir=${aggregator_base_dir}/install
 
     pkgtools__remove_path_to_PATH ${install_dir}/bin
-    pkgtools__remove_path_to_LD_LIBRARY_PATH ${install_dir}/lib
-    pkgtools__remove_path_to_env_variable CMAKE_MODULE_PATH ${install_dir}/share/cmake/Modules
-
-    if [ ${aggregator_name} = cadfael ]; then
-        unset BOOST_ROOT
-        unset GEANT4_ROOT_DIR
-        pkgtools__remove_path_to_LD_LIBRARY_PATH ${CADFAEL_LIB_DIR}/root
-    else
-        for i in ${install_dir}/share/*
-        do
-            local base=$(basename $i)
-            local upbase=${base:u}
-            unset ${upbase}_DATA_DIR
-            unset base upbase
-        done
-    fi
 
     __pkgtools__at_function_exit
     return 0
@@ -390,15 +330,28 @@ function __aggregator_set ()
     if [ ! -d /tmp/${USER} ]; then
         mkdir -p /tmp/${USER}
     fi
-    aggregator_logfile=/tmp/${USER}/${aggregator_name}_${aggregator_branch_name}.log
+    aggregator_logfile=/tmp/${USER}/${aggregator_name}.log
     aggregator_base_dir=${SNAILWARE_PRO_DIR}/${aggregator_name}
-    aggregator_build_dir=${SNAILWARE_BUILD_DIR}/${aggregator_name}
+    aggregator_repo_dir=${aggregator_base_dir}/repo
+    aggregator_build_dir=${aggregator_base_dir}/build
+    aggregator_install_dir=${aggregator_base_dir}/install
 
-    if [ ! -d  ${aggregator_base_dir}/repo ]; then
-        pkgtools__msg_warning "${aggregator_base_dir}/repo directory not created"
-        mkdir -p ${aggregator_base_dir}/repo
+    if [ ! -d ${aggregator_build_dir} ]; then
+        mkdir -p ${aggregator_build_dir}
     fi
-    cd ${aggregator_base_dir}/repo
+
+    if [ ! -d  ${aggregator_repo_dir} ]; then
+        pkgtools__msg_warning "${aggregator_repo_dir} directory not created"
+        mkdir -p ${aggregator_repo_dir}
+    fi
+
+    if ! ${__aggregagtor_use_make}; then
+        if ! $(pkgtools__has_binary ninja); then
+            pkgtools__msg_error "Ninja binary has not been found !"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    fi
 
     __pkgtools__at_function_exit
     return 0
@@ -408,29 +361,165 @@ function __aggregator_get ()
 {
     __pkgtools__at_function_enter __aggregator_get
 
-    which go-svn2git > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        pkgtools__msg_notice "Machine has go-svn2git"
-        go-svn2git -username nemo -verbose ${aggregator_svn_path}
-        if [ $? -ne 0 ]; then
-            pkgtools__msg_error "Checking fails!"
+    if $(pkgtools__has_binary go-svn2git); then
+        pkgtools__msg_debug "Machine has go-svn2git"
+        go-svn2git -username ${USER} -verbose ${aggregator_svn_path/trunk/}
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Checking out fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+        if [ ${icompo} = bayeux ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            components=(datatools
+                mygsl
+                materials
+                geomtools
+                brio
+                cuts
+                genvtx
+                emfield
+                dpp
+                genbb_help
+                mctools
+            )
+            for jcompo in ${=components}
+            do
+                pkgtools__msg_notice "Getting external component ${jcompo}"
+                (
+                    cd ${aggregator_repo_dir}/source && mkdir -p bx${jcompo}
+                    cd bx${jcompo}
+                    go-svn2git -username ${USER} -verbose \
+                        https://nemo.lpc-caen.in2p3.fr/svn/${jcompo}
+                    if $(pkgtools__last_command_fails); then
+                        pkgtools__msg_error "Checking out fails!"
+                        __pkgtools__at_function_exit
+                        return 1
+                    fi
+                )
+            done
+        elif [ ${icompo} = falaise ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            pkgtools__msg_notice "Getting external component CAT"
+            (
+                cd ${aggregator_repo_dir}/modules/CAT && mkdir -p CellularAutomatonTracker
+                cd CellularAutomatonTracker
+                go-svn2git -username ${USER} -verbose \
+                    https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Channel/Components/CellularAutomatonTracker
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Getting CAT fails!"
+                    __pkgtools__at_function_exit
+                    return 1
+                fi
+            )
+        fi
+    elif $(pkgtools__has_binary svn); then
+        pkgtools__msg_debug "Machine has subversion"
+        svn checkout ${aggregator_svn_path} .
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Checking out fails!"
             __pkgtools__at_function_exit
             return 1
         fi
     else
-        pkgtools__msg_notice "Machine does not have go-svn2git"
-        git svn init --prefix=svn/ --username=nemo --trunk=trunk --tags=tags --branches=branches \
-            ${aggregator_svn_path}
+        pkgtools__msg_warning "Machine has no subversion installed"
+        __pkgtools__at_function_exit
+        return 1
+    fi
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_update ()
+{
+    __pkgtools__at_function_enter __aggregator_update
+
+    if $(pkgtools__has_binary go-svn2git); then
+        pkgtools__msg_debug "Machine has go-svn2git"
         git svn fetch
-        if [ $? -ne 0 ]; then
-            pkgtools__msg_error "Checking fails!"
+        git svn rebase
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Updating fails!"
             __pkgtools__at_function_exit
             return 1
         fi
+        if [ ${icompo} = bayeux ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            components=(datatools
+                mygsl
+                materials
+                geomtools
+                brio
+                cuts
+                genvtx
+                emfield
+                dpp
+                genbb_help
+                mctools
+            )
+            for jcompo in ${=components}
+            do
+                pkgtools__msg_notice "Updating external component ${jcompo}"
+                (
+                    cd ${aggregator_repo_dir}/source/bx${jcompo}
+                    git svn fetch
+                    git svn rebase
+                    if $(pkgtools__last_command_fails); then
+                        pkgtools__msg_error "Updating ${jcompo} fails!"
+                        __pkgtools__at_function_exit
+                        return 1
+                    fi
+                )
+            done
+        elif [ ${icompo} = falaise ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            pkgtools__msg_notice "Updating external component CAT"
+            (
+                cd ${aggregator_repo_dir}/modules/CAT/CellularAutomatonTracker
+                git svn fetch
+                git svn rebase
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Updating CAT fails!"
+                    __pkgtools__at_function_exit
+                    return 1
+                fi
+            )
+        fi
+    elif $(pkgtools__has_binary svn); then
+        pkgtools__msg_debug "Machine has subversion"
+        svn update
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Updating fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    else
+        pkgtools__msg_warning "Machine has no subversion installed"
+        __pkgtools__at_function_exit
+        return 1
     fi
-    git checkout ${aggregator_branch_name}
-    if [ $? -ne 0 ]; then
-        pkgtools__msg_error "Branch ${aggregator_branch_name} does not exist!"
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_configure ()
+{
+    __pkgtools__at_function_enter __agregator_configure
+
+    if ! ${__aggregator_use_make}; then
+        aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja)"
+    fi
+
+    pkgtools__msg_devel "aggregator options=${aggregator_options}"
+
+    cd ${aggregator_build_dir}
+    cmake                             \
+        $(echo ${aggregator_options}) \
+        ${aggregator_repo_dir} | tee -a ${aggregator_logfile} 2>&1
+    if $(pkgtools__last_command_fails); then
+        pkgtools__msg_error "Configuration fails!"
         __pkgtools__at_function_exit
         return 1
     fi
@@ -443,26 +532,56 @@ function __aggregator_build ()
 {
     __pkgtools__at_function_enter __aggregator_build
 
-    if [ "x${aggregator_config_version}" != "x" ]; then
-        aggregator_options+=" --config ${aggregator_config_version}"
+    pkgtools__msg_devel "use make=${__aggregator_use_make}"
+    cd ${aggregator_build_dir}
+
+    # Cadfael has no install build command
+    local build_options
+    if [ ${aggregator_name} != cadfael ]; then
+        build_options="install"
     fi
 
-    ./pkgtools.d/pkgtool configure                                                    \
-        --install-prefix     ${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version} \
-        --ep-build-directory ${aggregator_build_dir}/build/${aggregator_branch_name}/${aggregator_config_version}  \
-        --download-directory ${aggregator_build_dir}/download                         \
-        ${aggregator_options} | tee -a ${aggregator_logfile} 2>&1
-    if [ $? -ne 0 ]; then
-        pkgtools__msg_error "Configuration fails!"
-        __pkgtools__at_function_exit
-        return 1
+    if ${__aggregator_use_make}; then
+        make -j$(nproc) ${build_options} | tee -a ${aggregator_logfile} 2>&1
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Installation fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    else
+        ninja ${build_options} | tee -a ${aggregator_logfile} 2>&1
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Installation fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
     fi
 
-    ./pkgtools.d/pkgtool install | tee -a ${aggregator_logfile} 2>&1
-    if [ $? -ne 0 ]; then
-        pkgtools__msg_error "Installation fails!"
-        __pkgtools__at_function_exit
-        return 1
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_test ()
+{
+    __pkgtools__at_function_enter __aggregator_test
+
+    pkgtools__msg_devel "aggregator build dir=${aggregator_build_dir}"
+    cd ${aggregator_build_dir}
+
+    if ${__aggregator_use_make}; then
+        make test | tee -a ${aggregator_logfile} 2>&1
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Test fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
+    else
+        ninja test | tee -a ${aggregator_logfile} 2>&1
+        if $(pkgtools__last_command_fails); then
+            pkgtools__msg_error "Test fails!"
+            __pkgtools__at_function_exit
+            return 1
+        fi
     fi
 
     __pkgtools__at_function_exit
@@ -473,10 +592,8 @@ function __aggregator_remove ()
 {
     __pkgtools__at_function_enter __aggregator_remove
 
-    echo y | ./pkgtools.d/pkgtool reset | tee -a ${aggregator_logfile} 2>&1
-
-    rm -rf ${aggregator_base_dir}/install
-    rm -rf ${aggregator_build_dir}/build
+    rm -rf ${aggregator_install_dir}
+    rm -rf ${aggregator_build_dir}
 
     __pkgtools__at_function_exit
     return 0
@@ -488,11 +605,10 @@ function __aggregator_dump ()
 
     pkgtools__msg_notice "Dump aggregator"
     pkgtools__msg_notice " |- name           : ${aggregator_name}"
-    pkgtools__msg_notice " |- branch         : ${aggregator_branch_name}"
     pkgtools__msg_notice " |- repository     : ${aggregator_svn_path}"
     pkgtools__msg_notice " |- options        : ${aggregator_options}"
     pkgtools__msg_notice " |- config version : ${aggregator_config_version}"
-    pkgtools__msg_notice " |- install dir.   : ${aggregator_base_dir}"
+    pkgtools__msg_notice " |- install dir.   : ${aggregator_install_dir}"
     pkgtools__msg_notice " \`- build dir.    : ${aggregator_build_dir}"
 
     __pkgtools__at_function_exit
@@ -504,486 +620,111 @@ function __aggregator_set_cadfael
     __pkgtools__at_function_enter __aggregator_set_cadfael
 
     aggregator_name="cadfael"
-    aggregator_branch_name="master"
-    aggregator_svn_path="https://svn.lal.in2p3.fr/users/garrido/Workdir/NEMO/SuperNEMO/Cadfael"
-    aggregator_options="--with-all             \
-                        --without-mysql	       \
-        		--without-hdf5	       \
-        		--without-systemc      \
-        		--without-python       \
-        		--with-test"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Cadfael/trunk"
 
-        case "${HOSTNAME}" in
-        garrido-laptop)
-                aggregator_options+=" --without-gnuplot"
-                ;;
-        lx3.lal.in2p3.fr|nemo*.lal.in2p3.fr)
-                aggregator_options+=" --with-gnuplot"
-                ;;
-        esac
-
-    aggregator_config_version=""
     __aggregator_set
+    aggregator_options="                                 \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
+        -DCADFAEL_VERBOSE_BUILD=ON                       \
+        -DCADFAEL_STEP_TARGETS=ON                        \
+        -Dport/patchelf=ON                               \
+        -Dport/gsl=ON                                    \
+        -Dport/clhep=ON                                  \
+        -Dport/boost=ON                                  \
+        -Dport/boost+regex=ON                            \
+        -Dport/camp=ON                                   \
+        -Dport/xerces-c=ON                               \
+        -Dport/geant4=ON                                 \
+        -Dport/geant4+gdml=ON                            \
+        -Dport/geant4+x11=ON                             \
+        -Dport/geant4+data=ON                            \
+        -Dport/root=ON                                   \
+        -Dport/root+x11=ON                               \
+        -Dport/root+asimage=ON                           \
+        -Dport/root+mathmore=ON                          \
+        -Dport/root+opengl=ON
+    "
+    unset CXX
+    unset CC
 
     __pkgtools__at_function_exit
     return 0
 }
 
-function __aggregator_get_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_get_cadfael
-
-    __aggregator_set_cadfael
-    __aggregator_get
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_source_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_source_cadfael
-
-    __aggregator_set_cadfael
-    __aggregator_source
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_unsource_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_unsource_cadfael
-
-    __aggregator_set_cadfael
-    __aggregator_unsource
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_remove_cadfael ()
-{
-    __pkgtools__at_function_enter __agregator_remove_cadfael
-
-    (
-        __aggregator_set_cadfael
-        __aggregator_remove
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_build_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_build_cadfael
-
-     (
-         __aggregator_set_cadfael
-         __aggregator_get
-         __aggregator_build
-         # 2013-07-08 : Change files permission in the install directory to make
-         # them available for everyone (I guess only ROOT set this fucking
-         # behavior)
-         pkgtools__msg_notice "AGGREGATOR_BASE_DIR=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}"
-         install_dir=${aggregator_base_dir}/install/${aggregator_branch_name}/${aggregator_config_version}
-
-         directory_list=$(find ${install_dir} -type d -not -wholename '*.git*')
-         for directory in ${=directory_list}; do
-             pkgtools__msg_debug "Setting permissions in ${directory}"
-             pkgtools__msg_debug "chmod a+rx ${directory}"
-             chmod a+rx ${directory}
-         done
-
-         # file_list=$(find ${install_dir} -type f -not -wholename '*.git*')
-         # for file in ${=file_list}; do
-         #     file_right=$(stat -c %a "${file}")
-         #     if [ $? -ne 0 ]; then
-         #         pkgtools__msg_error "Can't change permission on ${file} file"
-         #         __pkgtools__at_function_exit
-         #         return 1
-         #     fi
-
-         #     owner_right=$((${file_right}/100))
-         #     # never gives writing rights
-         #     other_right=$((${owner_right}-2))
-         #     right=${owner_right}${other_right}${other_right}
-
-         #     pkgtools__msg_debug "chmod ${right} ${file}"
-         #     chmod ${right} ${file}
-         # done
-     )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_dump_cadfael ()
-{
-    __pkgtools__at_function_enter __aggregator_dump_cadfael
-
-    __aggregator_set_cadfael
-    __aggregator_dump
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_set_bayeux ()
+function __aggregator_set_bayeux
 {
     __pkgtools__at_function_enter __aggregator_set_bayeux
 
-    # Building Bayeux
+    # Retrieve Cadfael information
+    __aggregator_set_cadfael
+    __aggregator_set
+    local cadfael_install_dir=${aggregator_install_dir}
+    pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
+
     aggregator_name="bayeux"
-    aggregator_branch_name="master"
-    aggregator_svn_path="https://svn.lal.in2p3.fr/users/garrido/Workdir/NEMO/SuperNEMO/Bayeux"
-    aggregator_config_version="legacy"
-    aggregator_options="--with-all  \
-                        --with-test"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Bayeux/trunk"
     __aggregator_set
+    aggregator_options="                                 \
+        -DCMAKE_BUILD_TYPE:STRING=Release                \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
+        -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
+        -DBayeux_WITH_GEANT4=ON
+    "
+    if ${with_test}; then
+        aggregator_options+="-DBayeux_ENABLE_TESTING=ON "
+    else
+        aggregator_options+="-DBayeux_ENABLE_TESTING=OFF "
+    fi
+
+    if $(pkgtools__has_binary ccache); then
+        export CXX='ccache g++'
+        export CC='ccache gcc'
+    fi
 
     __pkgtools__at_function_exit
     return 0
 }
 
-function __aggregator_get_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_get_bayeux
-
-    __aggregator_set_bayeux
-    __aggregator_get
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_source_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_source_bayeux
-
-    __aggregator_set_bayeux
-    __aggregator_source
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_unsource_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_unsource_bayeux
-
-    __aggregator_set_bayeux
-    __aggregator_unsource
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_remove_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_remove_bayeux
-
-    (
-        __aggregator_set_bayeux
-        __aggregator_remove
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_build_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_build_bayeux
-
-    (
-        __aggregator_source_cadfael
-        __aggregator_set_bayeux
-        __aggregator_get
-        __aggregator_build
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_dump_bayeux ()
-{
-    __pkgtools__at_function_enter __aggregator_dump_bayeux
-
-    __aggregator_set_bayeux
-    __aggregator_dump
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_set_channel ()
-{
-    __pkgtools__at_function_enter __aggregator_set_channel
-
-    aggregator_name="channel"
-    aggregator_branch_name="master"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Channel"
-    aggregator_config_version="trunk"
-    aggregator_options="--with-all \
-                        --with-test"
-    __aggregator_set
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_get_channel ()
-{
-    __pkgtools__at_function_enter __aggregator_get_channel
-
-    __aggregator_set_channel
-    __aggregator_get
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_source_channel ()
-{
-    __pkgtools__at_function_enter __aggregator_source_channel
-
-    __aggregator_set_channel
-    __aggregator_source
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_unsource_channel ()
-{
-    __pkgtools__at_function_enter __aggregator_unsource_channel
-
-    __aggregator_set_channel
-    __aggregator_unsource
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_remove_channel ()
-{
-    __pkgtools__at_function_enter __aggregator_remove_channel
-
-    (
-        __aggregator_set_channel
-        __aggregator_remove
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_build_channel ()
-{
-    __pkgtools__at_function_enter __aggregator_build_channel
-
-    (
-        __aggregator_source_cadfael
-        __aggregator_set_channel
-        __aggregator_get
-        __aggregator_build
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_dump_channel ()
-{
-    __pkgtools__at_function_enter __aggregator_dump_channel
-
-    __aggregator_set_channel
-    __aggregator_dump
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_set_falaise ()
+function __aggregator_set_falaise
 {
     __pkgtools__at_function_enter __aggregator_set_falaise
 
+    # Retrieve Cadfael information
+    __aggregator_set_cadfael
+    __aggregator_set
+    local cadfael_install_dir=${aggregator_install_dir}
+    pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
+    __aggregator_set_bayeux
+    __aggregator_set
+    local bayeux_install_dir=${aggregator_install_dir}
+    pkgtools__msg_devel "bayeux_install_dir=${bayeux_install_dir}"
+
     aggregator_name="falaise"
-    aggregator_branch_name="master"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Falaise"
-    aggregator_config_version="legacy"
-    aggregator_options="--with-all        \
-                        --with-snanalysis \
-                        --with-test"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Falaise/trunk"
     __aggregator_set
+    aggregator_options="                                                 \
+        -DCMAKE_BUILD_TYPE:STRING=Release                                \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                 \
+        -DCMAKE_PREFIX_PATH=${cadfael_install_dir};${bayeux_install_dir} \
+        -DFalaise_USE_SYSTEM_BAYEUX=ON                                   \
+        -DFalaise_BUILD_DEVELOPER_TOOLS=ON
+    "
+    if ${with_doc}; then
+        aggregator_options+="-DFalaise_BUILD_DOCS=ON "
+    else
+        aggregator_options+="-DFalaise_BUILD_DOCS=OFF "
+    fi
+    if ${with_test}; then
+        aggregator_options+="-DFalaise_ENABLE_TESTING=ON "
+    else
+        aggregator_options+="-DFalaise_ENABLE_TESTING=OFF "
+    fi
 
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_get_falaise ()
-{
-    __pkgtools__at_function_enter __aggregator_get_falaise
-
-    __aggregator_set_falaise
-    __aggregator_get
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_source_falaise ()
-{
-    __pkgtools__at_function_enter __aggregator_source_falaise
-
-    __aggregator_set_falaise
-    __aggregator_source
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_unsource_falaise ()
-{
-    __pkgtools__at_function_enter __aggregator_unsource_falaise
-
-    __aggregator_set_falaise
-    __aggregator_unsource
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_remove_falaise ()
-{
-    __pkgtools__at_function_enter __aggregator_remove_falaise
-
-    (
-        __aggregator_set_falaise
-        __aggregator_remove
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_build_falaise ()
-{
-    __pkgtools__at_function_enter __aggregator_build_falaise
-
-    (
-        __aggregator_source_cadfael
-        __aggregator_source_bayeux
-        __aggregator_source_channel
-        __aggregator_set_falaise
-        __aggregator_get
-        __aggregator_build
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_dump_falaise ()
-{
-    __pkgtools__at_function_enter __aggregator_dump_falaise
-
-    __aggregator_set_falaise
-    __aggregator_dump
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_set_chevreuse ()
-{
-    __pkgtools__at_function_enter __aggregator_set_chevreuse
-
-    aggregator_name="chevreuse"
-    aggregator_branch_name="master"
-    aggregator_config_version="trunk"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Chevreuse"
-    aggregator_options="--with-all  \
-                        --with-test"
-    __aggregator_set
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_get_chevreuse ()
-{
-    __pkgtools__at_function_enter __aggregator_get_chevreuse
-
-    __aggregator_set_chevreuse
-    __aggregator_get
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_source_chevreuse ()
-{
-    __pkgtools__at_function_enter __aggregator_source_chevreuse
-
-    __aggregator_set_chevreuse
-    __aggregator_source
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_unsource_chevreuse ()
-{
-    __pkgtools__at_function_enter __aggregator_unsource_chevreuse
-
-    __aggregator_set_chevreuse
-    __aggregator_unsource
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_remove_chevreuse ()
-{
-    __pkgtools__at_function_enter __aggregator_remove_chevreuse
-
-    (
-        __aggregator_set_chevreuse
-        __aggregator_remove
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_build_chevreuse ()
-{
-    __pkgtools__at_function_enter __aggregator_build_chevreuse
-
-    (
-        __aggregator_source_cadfael
-        __aggregator_source_bayeux
-        __aggregator_source_channel
-        __aggregator_source_falaise
-        __aggregator_set_chevreuse
-        __aggregator_get
-        __aggregator_build
-    )
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_dump_chevreuse ()
-{
-    __pkgtools__at_function_enter __aggregator_dump_chevreuse
-
-    __aggregator_set_chevreuse
-    __aggregator_dump
+    # Use ccache if any
+    if $(pkgtools__has_binary ccache); then
+        export CXX='ccache g++'
+        export CC='ccache gcc'
+    fi
 
     __pkgtools__at_function_exit
     return 0
