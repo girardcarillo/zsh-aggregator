@@ -338,9 +338,8 @@ function __aggregator_set ()
 
     if ! ${__aggregagtor_use_make}; then
         if ! $(pkgtools__has_binary ninja); then
-            pkgtools__msg_error "Ninja binary has not been found !"
-            __pkgtools__at_function_exit
-            return 1
+            pkgtools__msg_warning "Ninja binary has not been found !"
+            __aggregator_use_make=true
         fi
     fi
 
