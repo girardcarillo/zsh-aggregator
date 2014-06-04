@@ -614,6 +614,7 @@ function __aggregator_set_cadfael
 
     __aggregator_set
     aggregator_options="                                 \
+        -DCMAKE_BUILD_TYPE:STRING=Release                \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
         -DCADFAEL_VERBOSE_BUILD=ON                       \
         -DCADFAEL_STEP_TARGETS=ON                        \
