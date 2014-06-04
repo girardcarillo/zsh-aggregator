@@ -258,36 +258,27 @@ function __aggregator_environment ()
         garrido-laptop)
             nemo_base_dir_tmp="/home/${USER}/Workdir/NEMO"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
-            nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
-            nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
-            nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
             ;;
         pc-91089)
             nemo_base_dir_tmp="/data/workdir/nemo/"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
-            nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
-            nemo_simulation_dir_tmp="${nemo_base_dir_tmp}/supernemo/simulations"
-            nemo_build_dir_tmp="${nemo_pro_dir_tmp}"
             ;;
         ccige*|ccage*)
             nemo_base_dir_tmp="/sps/nemo/scratch/${USER}/workdir"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
-            nemo_dev_dir_tmp="${nemo_base_dir_tmp}/supernemo/development"
-            nemo_simulation_dir_tmp="/sps/nemo/scratch/${USER}/simulations"
-            nemo_build_dir_tmp="/scratch/${USER}/snware"
+            ;;
+        *.lal.in2p3.fr)
+            nemo_base_dir_tmp="/exp/nemo/${USER}/workdir"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             ;;
     esac
 
     if env | grep -q "^SNAILWARE_BASE_DIR="; then
-        pkgtools__set_variable SNAILWARE_PRO_DIR        "$SNAILWARE_BASE_DIR/snware"
-        pkgtools__set_variable SNAILWARE_DEV_DIR        "$SNAILWARE_BASE_DIR/development"
-        pkgtools__set_variable SNAILWARE_BUILD_DIR      "$SNAILWARE_PRO_DIR"
+        pkgtools__set_variable SNAILWARE_PRO_DIR "$SNAILWARE_BASE_DIR/snware"
     else
         # Export only if it is not already exported
-        pkgtools__set_variable SNAILWARE_BASE_DIR       "${nemo_base_dir_tmp}"
-        pkgtools__set_variable SNAILWARE_PRO_DIR        "${nemo_pro_dir_tmp}"
-        pkgtools__set_variable SNAILWARE_BUILD_DIR      "${nemo_build_dir_tmp}"
-        pkgtools__set_variable SNAILWARE_SIMULATION_DIR "${nemo_simulation_dir_tmp}"
+        pkgtools__set_variable SNAILWARE_BASE_DIR "${nemo_base_dir_tmp}"
+        pkgtools__set_variable SNAILWARE_PRO_DIR  "${nemo_pro_dir_tmp}"
     fi
 
     __pkgtools__at_function_exit
