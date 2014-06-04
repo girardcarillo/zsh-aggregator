@@ -336,13 +336,6 @@ function __aggregator_set ()
         mkdir -p ${aggregator_repo_dir}
     fi
 
-    if ! ${__aggregagtor_use_make}; then
-        if ! $(pkgtools__has_binary ninja); then
-            pkgtools__msg_warning "Ninja binary has not been found !"
-            __aggregator_use_make=true
-        fi
-    fi
-
     __pkgtools__at_function_exit
     return 0
 }
@@ -497,6 +490,13 @@ function __aggregator_update ()
 function __aggregator_configure ()
 {
     __pkgtools__at_function_enter __agregator_configure
+
+    if ! ${__aggregagtor_use_make}; then
+        if ! $(pkgtools__has_binary ninja); then
+            pkgtools__msg_warning "Ninja binary has not been found !"
+            __aggregator_use_make=true
+        fi
+    fi
 
     if ! ${__aggregator_use_make}; then
         aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools__get_binary_path ninja)"
