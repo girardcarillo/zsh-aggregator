@@ -332,7 +332,7 @@ function __aggregator_set ()
     fi
 
     if [ ! -d  ${aggregator_repo_dir} ]; then
-        pkgtools__msg_warning "${aggregator_repo_dir} directory not created"
+        pkgtools__msg_warning "${aggregator_repo_dir} directory does not exist ! Create it."
         mkdir -p ${aggregator_repo_dir}
     fi
 
