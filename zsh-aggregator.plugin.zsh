@@ -21,7 +21,7 @@ function aggregator ()
     local append_list_of_options_arg
     local append_list_of_components_arg
     local with_test=false
-    local with_doc=true
+    local with_doc=false
 
     while [ -n "$1" ]; do
         local token="$1"
@@ -59,6 +59,9 @@ function aggregator ()
                 __aggregator_use_make=true
             elif [ "${opt}" = "--use-ninja" ]; then
                 __aggregator_use_make=false
+            elif [ "${opt}" = "--use-env" ]; then
+                shift 1
+                __aggregator_use_env="$1"
             fi
         else
             if [ "${token}" = "environment" ]; then
@@ -327,8 +330,30 @@ function __aggregator_set ()
     aggregator_build_dir=${aggregator_base_dir}/build
     aggregator_install_dir=${aggregator_base_dir}/install
 
+    if [ "${__aggregator_use_env}" != "" ]; then
+        pkgtools__msg_notice "Using ${__aggregator_use_env} version"
+        (
+            cd ${aggregator_base_dir}
+            if [[ -L "${aggregator_build_dir}" && -d "${aggregator_build_dir}" ]]; then
+                rm ${aggregator_build_dir}
+            fi
+            aggregator_build_dir+="_${__aggregator_use_env}"
+            ln -sf build_${__aggregator_use_env} build
+            if [[ -L "${aggregator_install_dir}" && -d "${aggregator_install_dir}" ]]; then
+                rm ${aggregator_install_dir}
+            fi
+            aggregator_install_dir+="_${__aggregator_use_env}"
+            ln -sf install_${__aggregator_use_env} install
+        )
+        __aggregator_use_env=
+    fi
+
     if [ ! -d ${aggregator_build_dir} ]; then
         mkdir -p ${aggregator_build_dir}
+    fi
+
+    if [ ! -d ${aggregator_install_dir} ]; then
+        mkdir -p ${aggregator_install_dir}
     fi
 
     if [ ! -d  ${aggregator_repo_dir} ]; then
