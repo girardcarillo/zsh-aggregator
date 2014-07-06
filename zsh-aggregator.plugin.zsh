@@ -21,6 +21,7 @@ function aggregator ()
     local append_list_of_options_arg
     local append_list_of_components_arg
     local with_test=false
+    local with_warning=false
     local with_doc=false
 
     while [ -n "$1" ]; do
@@ -51,6 +52,10 @@ function aggregator ()
 	        with_test=true
             elif [ "${opt}" = "--without-test" ]; then
 	        with_test=false
+            elif [ "${opt}" = "--with-warning" ]; then
+	        with_warning=true
+            elif [ "${opt}" = "--without-warning" ]; then
+	        with_warning=false
             elif [ "${opt}" = "--with-doc" ]; then
 	        with_doc=true
             elif [ "${opt}" = "--without-doc" ]; then
@@ -135,8 +140,11 @@ function aggregator ()
         # Set aggregator
         __aggregator_set_${icompo}
 
+        pkgtools__msg_devel "repository=${aggregator_repo_dir}"
+        pkgtools__msg_devel "build=${aggregator_build_dir}"
+        pkgtools__msg_devel "install=${aggregator_install_dir}"
+
         # Look for the corresponding directory
-        pkgtools__msg_devel "repository=${SNAILWARE_PRO_DIR}/${icompo}/repo"
         local is_found=false
         pushd ${aggregator_repo_dir} > /dev/null 2>&1
         if $(pkgtools__last_command_succeeds); then
@@ -336,17 +344,21 @@ function __aggregator_set ()
             cd ${aggregator_base_dir}
             if [[ -L "${aggregator_build_dir}" && -d "${aggregator_build_dir}" ]]; then
                 rm ${aggregator_build_dir}
+                ln -sf build_${__aggregator_use_env} build
             fi
-            aggregator_build_dir+="_${__aggregator_use_env}"
-            ln -sf build_${__aggregator_use_env} build
             if [[ -L "${aggregator_install_dir}" && -d "${aggregator_install_dir}" ]]; then
                 rm ${aggregator_install_dir}
+                ln -sf install_${__aggregator_use_env} install
             fi
-            aggregator_install_dir+="_${__aggregator_use_env}"
-            ln -sf install_${__aggregator_use_env} install
         )
+        aggregator_build_dir+="_${__aggregator_use_env}"
+        aggregator_install_dir+="_${__aggregator_use_env}"
         __aggregator_use_env=
     fi
+
+    pkgtools__msg_devel "build=${aggregator_build_dir}"
+    pkgtools__msg_devel "install=${aggregator_install_dir}"
+
 
     if [ ! -d ${aggregator_build_dir} ]; then
         mkdir -p ${aggregator_build_dir}
@@ -514,7 +526,7 @@ function __aggregator_update ()
 
 function __aggregator_configure ()
 {
-    __pkgtools__at_function_enter __agregator_configure
+    __pkgtools__at_function_enter __aggregator_configure
 
     if ! ${__aggregator_use_make}; then
         if ! $(pkgtools__has_binary ninja); then
@@ -684,8 +696,15 @@ function __aggregator_set_bayeux
         -DCMAKE_BUILD_TYPE:STRING=Release                \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
-        -DBayeux_WITH_GEANT4=ON
+        -DBayeux_WITH_GEANT4=ON                          \
+        -DBayeux_FORCE_CXX_ALL_WARNINGS=OFF
     "
+    if ${with_warning}; then
+        aggregator_options+="-DBayeux_FORCE_CXX_ALL_WARNINGS=ON "
+    else
+        aggregator_options+="-DBayeux_FORCE_CXX_ALL_WARNINGS=OFF "
+    fi
+
     if ${with_test}; then
         aggregator_options+="-DBayeux_ENABLE_TESTING=ON "
     else
