@@ -704,6 +704,12 @@ function __aggregator_set_bayeux
         aggregator_options+="-DBayeux_FORCE_CXX_ALL_WARNINGS=OFF "
     fi
 
+    if ${with_doc}; then
+        aggregator_options+="-DBayeux_BUILD_DOCS=ON "
+    else
+        aggregator_options+="-DBayeux_BUILD_DOCS=OFF "
+    fi
+
     if ${with_test}; then
         aggregator_options+="-DBayeux_ENABLE_TESTING=ON "
     else
