@@ -9,7 +9,7 @@
 
 # Aggregator bundles
 typeset -ga __aggregator_bundles
-__aggregator_bundles=(cadfael bayeux falaise)
+__aggregator_bundles=(cadfael bayeux falaise chevreuse)
 typeset -g __aggregator_use_make=false
 
 function aggregator ()
