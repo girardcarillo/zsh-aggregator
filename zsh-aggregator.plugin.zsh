@@ -384,6 +384,45 @@ function __aggregator_set ()
     return 0
 }
 
+function __aggregator_externals ()
+{
+    __pkgtools__at_function_enter __aggregator_externals
+    cd $dir
+    typeset -A assoc_array
+    assoc_array=( $(git svn propget svn:externals) )
+    for ipkg in "${(@k)assoc_array}"; do
+        pkg=${ipkg/${prefix}/}
+        http=${assoc_array[$ipkg]%${pkg}*}${pkg}
+        branch=${assoc_array[$ipkg]##*/}
+        (
+            mkdir -p $ipkg && cd $ipkg
+            if [ $cmd = checkout ]; then
+                pkgtools__msg_notice "Getting $pkg from $http"
+                go-svn2git -username ${USER} -verbose ${http}
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Getting $pkg fails!"
+                    __pkgtools__at_function_exit
+                    return 1
+                fi
+                if [ $branch != trunk ]; then
+                    pkgtools__msg_notice "Checking out $branch branch"
+                    git checkout $branch
+                fi
+            elif [ $cmd = update ]; then
+                pkgtools__msg_notice "Updating $pkg"
+                git svn fetch && git svn rebase
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Updating $pkg fails!"
+                    __pkgtools__at_function_exit
+                    return 1
+                fi
+            fi
+        )
+    done
+    __pkgtools__at_function_exit
+    return 0
+}
+
 function __aggregator_get ()
 {
     __pkgtools__at_function_enter __aggregator_get
@@ -417,7 +456,7 @@ function __aggregator_get ()
                     cd ${aggregator_repo_dir}/source && mkdir -p bx${jcompo}
                     cd bx${jcompo}
                     go-svn2git -username ${USER} -verbose \
-                        https://nemo.lpc-caen.in2p3.fr/svn/${jcompo}
+                               https://nemo.lpc-caen.in2p3.fr/svn/${jcompo}
                     if $(pkgtools__last_command_fails); then
                         pkgtools__msg_error "Checking out fails!"
                         __pkgtools__at_function_exit
@@ -427,17 +466,21 @@ function __aggregator_get ()
             done
         elif [ ${icompo} = falaise ]; then
             pkgtools__msg_debug "Component ${icompo}"
-            pkgtools__msg_notice "Getting external component CAT"
             (
-                cd ${aggregator_repo_dir}/modules/CAT && mkdir -p CellularAutomatonTracker
-                cd CellularAutomatonTracker
-                go-svn2git -username ${USER} -verbose \
-                    https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Channel/Components/CellularAutomatonTracker
-                if $(pkgtools__last_command_fails); then
-                    pkgtools__msg_error "Getting CAT fails!"
-                    __pkgtools__at_function_exit
-                    return 1
-                fi
+                prefix=
+                dir=${aggregator_repo_dir}/modules/CAT
+                cmd=checkout
+                __aggregator_externals
+            )
+        elif [ ${icompo} = chevreuse ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            (
+                prefix=ch
+                dir=source
+                cmd=checkout
+                pkgtools__msg_notice "Switching to 'cmake_xg' branch"
+                cd ${aggregator_repo_dir} && git checkout cmake_xg
+                __aggregator_externals
             )
         fi
     elif $(pkgtools__has_binary svn); then
@@ -490,8 +533,7 @@ function __aggregator_update ()
                 pkgtools__msg_notice "Updating external component ${jcompo}"
                 (
                     cd ${aggregator_repo_dir}/source/bx${jcompo}
-                    git svn fetch
-                    git svn rebase
+                    git svn fetch && git svn rebase
                     if $(pkgtools__last_command_fails); then
                         pkgtools__msg_error "Updating ${jcompo} fails!"
                         __pkgtools__at_function_exit
@@ -501,16 +543,21 @@ function __aggregator_update ()
             done
         elif [ ${icompo} = falaise ]; then
             pkgtools__msg_debug "Component ${icompo}"
-            pkgtools__msg_notice "Updating external component CAT"
             (
-                cd ${aggregator_repo_dir}/modules/CAT/CellularAutomatonTracker
-                git svn fetch
-                git svn rebase
-                if $(pkgtools__last_command_fails); then
-                    pkgtools__msg_error "Updating CAT fails!"
-                    __pkgtools__at_function_exit
-                    return 1
-                fi
+                prefix=
+                dir=${aggregator_repo_dir}/modules/CAT
+                cmd=update
+                pkgtools__msg_notice "Updating external components"
+                __aggregator_externals
+            )
+        elif [ ${icompo} = chevreuse ]; then
+            pkgtools__msg_debug "Component ${icompo}"
+            (
+                prefix=ch
+                dir=source
+                cmd=update
+                pkgtools__msg_notice "Updating external components"
+                __aggregator_externals
             )
         fi
     elif $(pkgtools__has_binary svn); then
@@ -758,6 +805,51 @@ function __aggregator_set_falaise
         aggregator_options+="-DFalaise_ENABLE_TESTING=ON "
     else
         aggregator_options+="-DFalaise_ENABLE_TESTING=OFF "
+    fi
+
+    # Use ccache if any
+    if $(pkgtools__has_binary ccache); then
+        export CXX='ccache g++'
+        export CC='ccache gcc'
+    fi
+
+    __pkgtools__at_function_exit
+    return 0
+}
+
+function __aggregator_set_chevreuse
+{
+    __pkgtools__at_function_enter __aggregator_set_chevreuse
+
+    # Retrieve Cadfael information
+    # __aggregator_set_cadfael
+    # __aggregator_set
+    # local cadfael_install_dir=${aggregator_install_dir}
+    # pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
+    __aggregator_set_bayeux
+    __aggregator_set
+    local bayeux_install_dir=${aggregator_install_dir}
+    pkgtools__msg_devel "bayeux_install_dir=${bayeux_install_dir}"
+
+    aggregator_name="chevreuse"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Chevreuse/trunk"
+    __aggregator_set
+    aggregator_options="                                                 \
+        -DCMAKE_BUILD_TYPE:STRING=Release                                \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                 \
+        -DCMAKE_PREFIX_PATH=${bayeux_install_dir} \
+        -DChevreuse_USE_SYSTEM_BAYEUX=ON                                   \
+        -DChevreuse_BUILD_DEVELOPER_TOOLS=ON
+    "
+    if ${with_doc}; then
+        aggregator_options+="-DChevreuse_BUILD_DOCS=ON "
+    else
+        aggregator_options+="-DChevreuse_BUILD_DOCS=OFF "
+    fi
+    if ${with_test}; then
+        aggregator_options+="-DChevreuse_ENABLE_TESTING=ON "
+    else
+        aggregator_options+="-DChevreuse_ENABLE_TESTING=OFF "
     fi
 
     # Use ccache if any
