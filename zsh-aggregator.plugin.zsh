@@ -391,16 +391,30 @@ function __aggregator_externals ()
     typeset -A assoc_array
     assoc_array=( $(git svn propget svn:externals) )
     for ipkg in "${(@k)assoc_array}"; do
-        pkg=${ipkg/${prefix}/}
-        http=${assoc_array[$ipkg]%${pkg}*}${pkg}
-        branch=${assoc_array[$ipkg]##*/}
+        pkg=$ipkg
+        http=$assoc_array[$ipkg]
+        # Tweak for Bayeux
+        if $invert; then
+            tmp=$pkg
+            pkg=$http
+            http=$tmp
+        fi
+        branch=${http##*/}
+        _pkg=${pkg/${prefix}/}
+        _http=${http%${_pkg}*}${_pkg}
+        tmp=${_http/\^/https:\/\/nemo.lpc-caen.in2p3.fr\/svn}
+        _http=$tmp
+        pkgtools__msg_devel "pkg=$pkg"
+        pkgtools__msg_devel "pkg=$_pkg"
+        pkgtools__msg_devel "http=$_http"
+        pkgtools__msg_devel "branch=$branch"
         (
-            mkdir -p $ipkg && cd $ipkg
+            mkdir -p $pkg && cd $pkg
             if [ $cmd = checkout ]; then
-                pkgtools__msg_notice "Getting $pkg from $http"
-                go-svn2git -username ${USER} -verbose ${http}
+                pkgtools__msg_notice "Getting $_pkg from $_http"
+                go-svn2git -username ${USER} -verbose ${_http}
                 if $(pkgtools__last_command_fails); then
-                    pkgtools__msg_error "Getting $pkg fails!"
+                    pkgtools__msg_error "Getting $_pkg fails!"
                     __pkgtools__at_function_exit
                     return 1
                 fi
@@ -409,10 +423,10 @@ function __aggregator_externals ()
                     git checkout $branch
                 fi
             elif [ $cmd = update ]; then
-                pkgtools__msg_notice "Updating $pkg"
+                pkgtools__msg_notice "Updating $_pkg"
                 git svn fetch && git svn rebase
                 if $(pkgtools__last_command_fails); then
-                    pkgtools__msg_error "Updating $pkg fails!"
+                    pkgtools__msg_error "Updating $_pkg fails!"
                     __pkgtools__at_function_exit
                     return 1
                 fi
@@ -437,39 +451,20 @@ function __aggregator_get ()
         fi
         if [ ${icompo} = bayeux ]; then
             pkgtools__msg_debug "Component ${icompo}"
-            components=(datatools
-                mygsl
-                materials
-                geomtools
-                brio
-                cuts
-                genvtx
-                emfield
-                dpp
-                genbb_help
-                mctools
+            (
+                prefix=bx
+                dir=source
+                cmd=checkout
+                invert=true
+                __aggregator_externals
             )
-            for jcompo in ${=components}
-            do
-                pkgtools__msg_notice "Getting external component ${jcompo}"
-                (
-                    cd ${aggregator_repo_dir}/source && mkdir -p bx${jcompo}
-                    cd bx${jcompo}
-                    go-svn2git -username ${USER} -verbose \
-                               https://nemo.lpc-caen.in2p3.fr/svn/${jcompo}
-                    if $(pkgtools__last_command_fails); then
-                        pkgtools__msg_error "Checking out fails!"
-                        __pkgtools__at_function_exit
-                        return 1
-                    fi
-                )
-            done
         elif [ ${icompo} = falaise ]; then
             pkgtools__msg_debug "Component ${icompo}"
             (
                 prefix=
                 dir=${aggregator_repo_dir}/modules/CAT
                 cmd=checkout
+                invert=false
                 __aggregator_externals
             )
         elif [ ${icompo} = chevreuse ]; then
@@ -480,6 +475,7 @@ function __aggregator_get ()
                 cmd=checkout
                 pkgtools__msg_notice "Switching to 'cmake_xg' branch"
                 cd ${aggregator_repo_dir} && git checkout cmake_xg
+                invert=false
                 __aggregator_externals
             )
         fi
