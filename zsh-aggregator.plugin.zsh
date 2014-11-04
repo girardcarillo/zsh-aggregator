@@ -835,11 +835,7 @@ function __aggregator_set_falaise
         aggregator_options+="-DFalaise_ENABLE_TESTING=OFF "
     fi
 
-    # Use ccache if any
-    if $(pkgtools__has_binary ccache); then
-        export CXX='ccache g++'
-        export CC='ccache gcc'
-    fi
+    __aggregator_set_compiler
 
     __pkgtools__at_function_exit
     return 0
@@ -880,11 +876,7 @@ function __aggregator_set_chevreuse
         aggregator_options+="-DChevreuse_ENABLE_TESTING=OFF "
     fi
 
-    # Use ccache if any
-    if $(pkgtools__has_binary ccache); then
-        export CXX='ccache g++'
-        export CC='ccache gcc'
-    fi
+    __aggregator_set_compiler
 
     __pkgtools__at_function_exit
     return 0
