@@ -774,8 +774,7 @@ function __aggregator_set_bayeux
     aggregator_options="                                 \
         -DCMAKE_BUILD_TYPE:STRING=Release                \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
-        -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
-        -DBayeux_WITH_GEANT4=ON
+        -DCMAKE_PREFIX_PATH=${cadfael_install_dir}
     "
     if ${with_warning}; then
         aggregator_options+="-DBayeux_FORCE_CXX_ALL_WARNINGS=ON "
