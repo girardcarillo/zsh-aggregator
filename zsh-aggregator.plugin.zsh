@@ -695,11 +695,11 @@ function __aggregator_set_compiler ()
         cc="${cc}ccache "
     fi
     if $(pkgtools__has_binary clang); then
-        pkgtools__msg_notice "Using clang compiler"
+        pkgtools__msg_debug "Using clang compiler"
         cxx="${cxx}clang++ -fcolor-diagnostics -Qunused-arguments"
         cc="${cc}clang -fcolor-diagnostics -Qunused-arguments"
     elif $(pkgtools__has_binary g++); then
-        pkgtools__msg_notice "Using GNU compiler"
+        pkgtools__msg_debug "Using GNU compiler"
         if [[ $(g++ --version | head -1 | awk '{print $3}') > 4.9 ]]; then
             cxx="${cxx}g++ -fdiagnostics-color=always"
             cc="${cc}gcc -fdiagnostics-color=always"
