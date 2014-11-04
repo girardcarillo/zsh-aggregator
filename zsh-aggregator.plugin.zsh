@@ -587,7 +587,7 @@ function __aggregator_configure ()
     cd ${aggregator_build_dir}
     cmake                             \
         $(echo ${aggregator_options}) \
-        ${aggregator_repo_dir} | tee -a ${aggregator_logfile} 2>&1
+        ${aggregator_repo_dir}
     if $(pkgtools__last_command_fails); then
         pkgtools__msg_error "Configuration fails!"
         __pkgtools__at_function_exit
@@ -612,14 +612,14 @@ function __aggregator_build ()
     fi
 
     if ${__aggregator_use_make}; then
-        make -j$(nproc) ${build_options} | tee -a ${aggregator_logfile} 2>&1
+        make -j$(nproc) ${build_options}
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
             __pkgtools__at_function_exit
             return 1
         fi
     else
-        ninja ${build_options} | tee -a ${aggregator_logfile} 2>&1
+        ninja ${build_options}
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
             __pkgtools__at_function_exit
@@ -639,14 +639,14 @@ function __aggregator_test ()
     cd ${aggregator_build_dir}
 
     if ${__aggregator_use_make}; then
-        make test | tee -a ${aggregator_logfile} 2>&1
+        make test
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Test fails!"
             __pkgtools__at_function_exit
             return 1
         fi
     else
-        ninja test | tee -a ${aggregator_logfile} 2>&1
+        ninja test
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Test fails!"
             __pkgtools__at_function_exit
