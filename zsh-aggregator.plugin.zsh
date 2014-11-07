@@ -246,8 +246,6 @@ function aggregator ()
         popd > /dev/null 2>&1
     done
 
-    unset mode append_list_of_components_arg append_list_of_options_arg
-    unset with_test
     unset aggregator_install_dir  aggregator_options      aggregator_svn_path
     unset aggregator_base_dir     aggregator_logfile      aggregator_repo_dir
     unset aggregator_build_dir    aggregator_name
