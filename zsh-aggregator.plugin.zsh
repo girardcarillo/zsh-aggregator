@@ -21,7 +21,7 @@ function aggregator ()
     local append_list_of_options_arg
     local append_list_of_components_arg
     local with_test=false
-    local with_warning=false
+    local with_warning=true
     local with_doc=false
 
     while [ -n "$1" ]; do
