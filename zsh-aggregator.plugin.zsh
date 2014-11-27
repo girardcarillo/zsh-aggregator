@@ -23,6 +23,7 @@ function aggregator ()
     local with_test=false
     local with_warning=true
     local with_doc=false
+    local use_clang=false
 
     while [ -n "$1" ]; do
         local token="$1"
@@ -64,6 +65,8 @@ function aggregator ()
                 __aggregator_use_make=true
             elif [ "${opt}" = "--use-ninja" ]; then
                 __aggregator_use_make=false
+            elif [ "${opt}" = "--use-clang" ]; then
+                use_clang=true
             elif [ "${opt}" = "--use-env" ]; then
                 shift 1
                 __aggregator_use_env="$1"
@@ -695,23 +698,31 @@ function __aggregator_set_compiler ()
         cxx="${cxx}ccache "
         cc="${cc}ccache "
     fi
-    if $(pkgtools__has_binary clang); then
-        pkgtools__msg_debug "Using clang compiler"
-        cxx="${cxx}clang++ -fcolor-diagnostics -Qunused-arguments"
-        cc="${cc}clang -fcolor-diagnostics -Qunused-arguments"
-    elif $(pkgtools__has_binary g++); then
-        pkgtools__msg_debug "Using GNU compiler"
-        if [[ $(g++ --version | head -1 | awk '{print $3}') > 4.9 ]]; then
-            cxx="${cxx}g++ -fdiagnostics-color=always"
-            cc="${cc}gcc -fdiagnostics-color=always"
+    if ${use_clang}; then
+        if $(pkgtools__has_binary clang); then
+            pkgtools__msg_debug "Using clang compiler"
+            cxx="${cxx}clang++ -fcolor-diagnostics -Qunused-arguments -D__extern_always_inline=inline"
+            cc="${cc}clang -fcolor-diagnostics -Qunused-arguments -D__extern_always_inline=inline"
         else
-            cxx="${cxx}g++"
-            cc="${cc}gcc"
+            pkgtools__msg_error "Clang compiler is not installed !"
+            __pkgtools__at_function_exit
+            return 1
         fi
     else
-        pkgtools__msg_error "Missing a decent C/C++ compiler !"
-        __pkgtools__at_function_exit
-        return 1
+        if $(pkgtools__has_binary g++); then
+            pkgtools__msg_debug "Using GNU compiler"
+            if [[ $(g++ --version | head -1 | awk '{print $3}') > 4.9 ]]; then
+                cxx="${cxx}g++ -fdiagnostics-color=always -Wno-unused-local-typedefs"
+                cc="${cc}gcc -fdiagnostics-color=always -Wno-unused-local-typedefs"
+            else
+                cxx="${cxx}g++"
+                cc="${cc}gcc"
+            fi
+        else
+            pkgtools__msg_error "GNU compiler is not installed !"
+            __pkgtools__at_function_exit
+            return 1
+        fi
     fi
     pkgtools__msg_devel "cxx=$cxx"
     pkgtools__msg_devel "cc=$cc"
@@ -859,11 +870,11 @@ function __aggregator_set_chevreuse
     aggregator_name="chevreuse"
     aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Chevreuse/trunk"
     __aggregator_set
-    aggregator_options="                                                 \
-        -DCMAKE_BUILD_TYPE:STRING=Release                                \
-        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                 \
-        -DCMAKE_PREFIX_PATH=${bayeux_install_dir} \
-        -DChevreuse_USE_SYSTEM_BAYEUX=ON                                   \
+    aggregator_options="                                 \
+        -DCMAKE_BUILD_TYPE:STRING=Release                \
+        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
+        -DCMAKE_PREFIX_PATH=${bayeux_install_dir}        \
+        -DChevreuse_USE_SYSTEM_BAYEUX=ON                 \
         -DChevreuse_BUILD_DEVELOPER_TOOLS=ON
     "
     if ${with_doc}; then
