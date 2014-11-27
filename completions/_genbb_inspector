@@ -1,0 +1,55 @@
+#compdef genbb_inspector
+
+function _genbb_inspector ()
+{
+  typeset -A opt_args
+  local context state line curcontext=""
+
+  _arguments \
+{-h,--help}'[produce help message ]' \
+{-d,--debug}'[produce debug logging ]' \
+{-l,--load-dll}'[load a dynamic library ]' \
+--dll-config'[load a configuration file for dynamic library loading ]' \
+{-I,--interactive}'[run in interactive mode (not implemented) ]' \
+{-n,--number-of-events}'[set the number of generated events.   Example :    --number-of-events 10000  ]' \
+{-x,--trace-index}'[set the trace index.   Example :    --trace-index 10000  ]' \
+{-u,--prng-trunc}'[set the trunc index of the random number generator (PRNG).   Example :    --prng-trunc 7  ]' \
+{-s,--prng-seed}'[set the seed of the random number generator (PRNG).   Example :    --prng-seed 314159  ]' \
+{-K,--prng-tracker}'[set the PRNG tracker file.   Example :    --prng-tracker genbb_inspector_prng.trk  ]' \
+{-c,--configuration}'[set the genbb manager configuration file.   Example :    --configuration genbb.conf  ]' \
+{-a,--action}'[set the action.   Examples :    --action list    --action shoot  ]' \
+{-g,--generator}'[set the particle generator.   Example :    --generator Bi207  ]' \
+{-H,--histo-def}'[set the name of an histogram definition input filename. ]' \
+{-o,--output-file}'[set the name of an output filename. ]' \
+{-t,--prompt-time-limit}'[set the limit on prompt time in ns. ]' \
+{-P,--prompt}'[analyze prompt particles ]' \
+{-D,--delayed}'[analyze delayed particles ]' \
+{-T,--title-prefix}'[set a title prefix for exported histograms ]' \
+{-S,--name-suffix}'[set a name suffix for exported histograms ]' \
+'*: :->args' \
+&& ret=0
+
+  case $state in
+    args)
+      if [[ CURRENT -eq NORMARG && ${+opt_args[--match]} -eq 0 ]]
+      then
+        # If the current argument is the first non-option argument
+        # and --match isn't present then a pattern is expected
+        _message -e patterns 'pattern' && ret=0
+      else
+        _files -/
+      fi
+      ;;
+  esac
+
+  return ret
+}
+
+_genbb_inspector "$@"
+
+# Local Variables:
+# mode: Shell-Script
+# sh-indentation: 2
+# indent-tabs-mode: nil
+# sh-basic-offset: 2
+# End:

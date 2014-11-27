@@ -1,0 +1,81 @@
+#compdef dpp_processing
+
+function _dpp_processing ()
+{
+  local ret=1 curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _module_all () {
+    # we cache the list of repository
+    if (( ! $+modulelist )); then
+      _config=${(v)opt_args[(i)-c|--module-manager-config]}
+      if [ ! -z "$_config" ]; then
+        for f in $(dirname $(eval echo ${_config}))/*.conf; do
+          line=$(cat $f | grep "\[.*type=.*_module.*\]")
+          name=$(echo $line | sed 's@\[name="\(.*\)".*type.*@\1@')
+          modulelist+=( $(echo $name) )
+        done
+      fi
+    fi
+  }
+
+  _arguments                                                                                                                           \
+    {-h,--help}'[produce help message]'                                                                                                \
+    {-P,--logging-priority}'[set logging priority]:logging:->log'                                                                      \
+    {-l,--load-dll}'[set a DLL to be loaded]'                                                                                          \
+    {-L,--dlls-config}'[set the DLL loader configuration file]:file:_files -g \*.conf'                                                 \
+    {-%,--modulo}'[set the modulo print period for data record]:number'                                                                \
+    {-M,--max-records}'[set the maximum number of data records to be processed]:number'                                                \
+    {-X,--no-max-records}'[Do not limit the maximum number of data records to be processed]:number'                                    \
+    {-m,--module}'[add a module in the pipeline (optional)]:module:->module'                                                           \
+    {-c,--module-manager-config}'[set the module manager configuration file]:manager:_files -g \*.conf'                                \
+    {-i,--input-file}'[set an input file (optional)]:file:_files -g \*.{brio,xml,data.gz,txt}'                                         \
+    {-o,--output-file}'[set the output file (optional)]:file:_files -g \*.{brio,xml,data.gz,txt}'                                      \
+    {-O,--max-records-per-output-file}'[set the maximum number of data records per output file]:number'                                \
+    "--datatools\:\:help"'[Print help for the datatools kernel]'                                                                       \
+    "--datatools\:\:splash"'[Print splash screen at datatools kernel loading]'                                                         \
+    "--datatools\:\:logging"'[Set the datatools kernel\'\''s logging]:datatools:->log'                                                 \
+    "--datatools\:\:nolibinfo"'[Inhibit the use of the library/component information register]'                                        \
+    "--datatools\:\:libinfo\:\:logging"'[Set the datatools kernel\'\''s library info logging priority]:datatools:->log'                \
+    "--datatools\:\:resource-path="'[Register a resource path associated to a library or module]:datatools:_path_files -P falaise@ -/' \
+    "--datatools\:\:novariant"'[Inhibit the use of the configuration variant repository]'                                              \
+    "--datatools\:\:variant-config="'[The system variant repository configuration filename]:datatools:_files -g \*.conf'               \
+    "--datatools\:\:variant-load="'[Load the values of the variant]:datatools:_files'                                                  \
+    "--datatools\:\:variant-set="'[Set the values of a variant]'                                                                       \
+    "--datatools\:\:variant-store="'[Store the values of the variant]'                                                                 \
+    '*: :->args'                                                                                                                       \
+    && ret=0
+
+  case $state in
+    log)
+      _logs=(
+        "fatal"
+        "critical"
+        "error"
+        "warning"
+        "notice"
+        "information"
+        "debug"
+        "trace"
+      )
+      _values 'Logging priority' $_logs
+      ;;
+    module)
+      _module_all
+      _describe -t modulelist 'module' modulelist && ret=0
+      ;;
+    args)
+      _path_files -/ && ret=0
+      ;;
+  esac
+
+  unset modulelist
+  return ret
+}
+
+# Local Variables:
+# mode: Shell-Script
+# sh-indentation: 2
+# indent-tabs-mode: nil
+# sh-basic-offset: 2
+# End:

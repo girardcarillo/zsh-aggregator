@@ -91,7 +91,7 @@ options. Let's try `build` option and again try to complete by using `TAB`
 
 ```bash
 ➜  aggregator build
-all bayeux cadfael channel chevreuse falaise
+all bayeux cadfael chevreuse falaise
 ```
 
 You can select and build software agregators or build `all` the aggregators in

@@ -7,6 +7,9 @@
 # Requirements: pkgtools
 # Status: not intended to be distributed yet
 
+# Add completion
+fpath=(${ADOTDIR}/repos/https-COLON--SLASH--SLASH-github.com-SLASH-xgarrido-SLASH-zsh-aggregator.git/completions $fpath)
+
 # Aggregator bundles
 typeset -ga __aggregator_bundles
 __aggregator_bundles=(cadfael bayeux falaise chevreuse)

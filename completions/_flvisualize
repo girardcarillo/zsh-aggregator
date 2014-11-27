@@ -1,0 +1,45 @@
+#compdef flvisualize
+
+local ret=1 state
+typeset -A opt_args
+
+_arguments                                                                                                          \
+  {-h,--help}'[produce help message]'                                                                               \
+  {-P,--logging-priority}'[set logging priority]:log:(fatal critical error warning notice information debug trace)' \
+  {-s,--scale}'[scale factor for computer screen (height/width)]:number'                                            \
+  {-a,--auto-reading-delay}'[automatic event reading delay in seconds]:number'                                      \
+  --detector-config-file'[set the path to the detector config file]:file:_files -g \*.conf'                         \
+  --style-config-file'[set the path to the style config file]:file:_files -g \*.conf'                               \
+  --cut-config-file'[set the path to the cut manager config file]:file:_files -g \*.conf'                           \
+  --preload'[enable the load in memory of Boost archive (only working with plain simulated output from sng4)]'      \
+  {-i,--input-file}'[set an input file(s)]:file:_files -g \*.{brio,xml,data.gz,txt}'                                \
+  {-l,--load-dll}'[set a DLL to be loaded]'                                                                         \
+  --2d-display'[set position of 2D display frame]:position:(left right)'                                            \
+  --full-2d-view'[add a new tab with top/front/side 2D view in one frame]'                                          \
+  --focus-on-roi'[focus views on the region-of-interest]'                                                           \
+  --show-simulated-vertex'[show simulated vertex]:boolean:(true false)'                                             \
+  --show-simulated-tracks'[show simulated tracks]:boolean:(true false)'                                             \
+  --show-simulated-hits'[show simulated hits]:boolean:(true false)'                                                 \
+  --show-calibrated-hits'[show calibrated hits]:boolean:(true false)'                                               \
+  --show-calibrated-info'[show calibrated info]:boolean:(true false)'                                               \
+  --show-tracker-clustered-hits'[show tracker clustered hits]:boolean:(true false)'                                 \
+  --show-tracker-trajectories'[show tracker trajectories]:boolean:(false true)'                                     \
+  --show-particle-tracks'[show particle tracks]:boolean:(false true)'                                               \
+  '*: :->args'                                                                                                      \
+  && ret=0
+
+case $state in
+  args)
+    _files -g \*.conf
+    ;;
+esac
+
+return ret
+
+
+# Local Variables:
+# mode: Shell-Script
+# sh-indentation: 2
+# indent-tabs-mode: nil
+# sh-basic-offset: 2
+# End:

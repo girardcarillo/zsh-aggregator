@@ -1,0 +1,64 @@
+#compdef g4_production
+
+function _g4_production ()
+{
+  typeset -A opt_args
+  local context state line curcontext=""
+
+  _arguments \
+{-h,--help}'[produce help message]' \
+{-g,--logging-priority}'[set the logging priority threshold]' \
+{-n,--number-of-events}'[set the number of events to be simulated]' \
+{-m,--number-of-events-modulo}'[set the event print period (0 means no print)]' \
+{-i,--interactive}'[run simulation in interactive mode]' \
+{-b,--batch}'[run simulation in batch mode]' \
+{-c,--config}'[set the manager configuration file]' \
+--vertex-generator-name'[set the name of the vertex generator]' \
+--vertex-generator-seed'[set the seed of the vertex generator random number generator]' \
+--event-generator-name'[set the name of the event generator]' \
+--event-generator-seed'[set the seed of the event generator random number generator]' \
+--shpf-seed'[set the seed of the step hit processors random number generator]' \
+--g4-manager-seed'[set the seed of the G4 manager random number generator]' \
+--input-prng-seeds-file'[set the file from which to load the seeds of the random number generators]' \
+--output-prng-seeds-file'[set the file to store the seeds of the random number generators]' \
+--input-prng-states-file'[set the file from which to load the backuped internal states of the random number generators(PRNG)]' \
+--output-prng-states-file'[set the file to store/backup the internal states of the random number generators(PRNG)]' \
+--output-data-file'[set the file to store the generated simulated data]' \
+--g4-visu'[G4 visualization(only in interactive mode)]' \
+--no-g4-visu'[no G4 visualization(only in interactive mode)]' \
+--g4-macro'[set the G4 macro file(only if interactive G4 visualization)]' \
+--using-time-statistics'[print time statistics at the end of the run]' \
+--forbid-private-hits'[do not allow private(un-official) MC hits]' \
+--dont-save-no-sensitive-hit-events'[do not save events without sensitive MC hits]' \
+--run-header-footer'[store the run header and footer info together with the output data file]' \
+{-L,--dlls-config}'[set the DLL loader configuration file.   Example :    --dlls-config dlls.conf  ]' \
+{-l,--load-dll}'[set a DLL to be loaded.   Example :    --load-dll G4VisXXX  ]' \
+'*: :->args' \
+&& ret=0
+
+  case $state in
+    args)
+      if [[ CURRENT -eq NORMARG && ${+opt_args[--match]} -eq 0 ]]
+      then
+        # If the current argument is the first non-option argument
+        # and --match isn't present then a pattern is expected
+        _message -e patterns 'pattern' && ret=0
+      else
+        _files -/
+      fi
+      ;;
+  esac
+
+  return ret
+}
+
+_g4_production "$@"
+
+compdef _g4_production bxg4_production
+
+# Local Variables:
+# mode: Shell-Script
+# sh-indentation: 2
+# indent-tabs-mode: nil
+# sh-basic-offset: 2
+# End:
