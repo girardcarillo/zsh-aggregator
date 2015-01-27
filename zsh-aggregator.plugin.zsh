@@ -519,38 +519,20 @@ function __aggregator_update ()
         fi
         if [ ${icompo} = bayeux ]; then
             pkgtools__msg_debug "Component ${icompo}"
-            components=(datatools
-                mygsl
-                materials
-                geomtools
-                brio
-                cuts
-                genvtx
-                emfield
-                dpp
-                genbb_help
-                mctools
+            (
+                prefix=bx
+                dir=source
+                cmd=update
+                invert=true
+                __aggregator_externals
             )
-            for jcompo in ${=components}
-            do
-                pkgtools__msg_notice "Updating external component ${jcompo}"
-                (
-                    cd ${aggregator_repo_dir}/source/bx${jcompo}
-                    git svn fetch && git svn rebase
-                    if $(pkgtools__last_command_fails); then
-                        pkgtools__msg_error "Updating ${jcompo} fails!"
-                        __pkgtools__at_function_exit
-                        return 1
-                    fi
-                )
-            done
         elif [ ${icompo} = falaise ]; then
             pkgtools__msg_debug "Component ${icompo}"
             (
                 prefix=
                 dir=${aggregator_repo_dir}/modules/CAT
                 cmd=update
-                pkgtools__msg_notice "Updating external components"
+                invert=false
                 __aggregator_externals
             )
         elif [ ${icompo} = chevreuse ]; then
@@ -559,7 +541,7 @@ function __aggregator_update ()
                 prefix=ch
                 dir=source
                 cmd=update
-                pkgtools__msg_notice "Updating external components"
+                invert=false
                 __aggregator_externals
             )
         fi
