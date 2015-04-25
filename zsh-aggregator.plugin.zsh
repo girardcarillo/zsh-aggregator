@@ -81,6 +81,8 @@ function aggregator ()
                 mode="configure"
             elif [ "${token}" = "build" ]; then
                 mode="build"
+            elif [ "${token}" = "install" ]; then
+                mode="install"
             elif [ "${token}" = "rebuild" ]; then
                 mode="rebuild"
             elif [ "${token}" = "reset" ]; then
@@ -212,6 +214,14 @@ function aggregator ()
                 __aggregator_build
                 if $(pkgtools__last_command_fails); then
                     pkgtools__msg_error "Building '${icompo}' aggregator fails !"
+                    break
+                fi
+                ;;
+            install)
+                pkgtools__msg_notice "Installing '${icompo}' aggregator"
+                __aggregator_build install
+                if $(pkgtools__last_command_fails); then
+                    pkgtools__msg_error "Installing '${icompo}' aggregator fails !"
                     break
                 fi
                 ;;
@@ -595,9 +605,9 @@ function __aggregator_build ()
     cd ${aggregator_build_dir}
 
     # Cadfael has no install build command
-    local build_options
-    if [ ${aggregator_name} != cadfael ]; then
-        build_options="install"
+    local build_options=$1
+    if [ ${aggregator_name} = cadfael ]; then
+        build_options=
     fi
 
     if ${__aggregator_use_make}; then

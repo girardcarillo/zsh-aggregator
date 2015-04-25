@@ -11,6 +11,7 @@ _aggregator_aliasmap=(
   unsetup unsetup
   conf    configure
   build   build
+  install install
   reset   reset
   test    test
   co      checkout
@@ -47,6 +48,12 @@ _aggregator_components=(
 function _aggregator-build ()
 {
     [[ -n ${aggregator_describe} ]] && print "Build a component" && return
+    __aggregator-choose-component
+}
+
+function _aggregator-install ()
+{
+    [[ -n ${aggregator_describe} ]] && print "Install a component" && return
     __aggregator-choose-component
 }
 
