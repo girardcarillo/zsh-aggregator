@@ -83,8 +83,8 @@ function aggregator ()
                 mode="build"
             elif [ "${token}" = "install" ]; then
                 mode="install"
-            elif [ "${token}" = "rebuild" ]; then
-                mode="rebuild"
+            elif [ "${token}" = "reinstall" ]; then
+                mode="reinstall"
             elif [ "${token}" = "reset" ]; then
                 mode="reset"
             elif [ "${token}" = "setup" ]; then
@@ -242,11 +242,11 @@ function aggregator ()
                     break
                 fi
                 ;;
-            rebuild)
+            reinstall)
                 pkgtools__msg_notice "Rebuilding '${icompo}' aggregator"
                 aggregator ${append_list_of_options_arg} reset     ${icompo}
                 aggregator ${append_list_of_options_arg} configure ${icompo}
-                aggregator ${append_list_of_options_arg} build     ${icompo}
+                aggregator ${append_list_of_options_arg} install   ${icompo}
                 aggregator ${append_list_of_options_arg} setup     ${icompo}
                 ;;
             test)
@@ -707,7 +707,7 @@ function __aggregator_set_compiler ()
         if $(pkgtools__has_binary g++); then
             pkgtools__msg_debug "Using GNU compiler"
             if [[ $(g++ --version | head -1 | awk '{print $3}') > 4.9 ]]; then
-                cxx="${cxx}g++ -fdiagnostics-color=always -Wno-unused-local-typedefs"
+                cxx="${cxx}g++ -std=c++11 -Wno-deprecated-declarations -fdiagnostics-color=always -Wno-unused-local-typedefs"
                 cc="${cc}gcc -fdiagnostics-color=always -Wno-unused-local-typedefs"
             else
                 cxx="${cxx}g++"
