@@ -490,9 +490,7 @@ function __aggregator_get ()
                 prefix=ch
                 dir=source
                 cmd=checkout
-                pkgtools__msg_notice "Switching to 'cmake_xg' branch"
-                cd ${aggregator_repo_dir} && git checkout cmake_xg
-                invert=false
+                invert=true
                 __aggregator_externals
             )
         fi
