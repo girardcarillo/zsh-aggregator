@@ -863,7 +863,7 @@ function __aggregator_set_chevreuse
     pkgtools__msg_devel "bayeux_install_dir=${bayeux_install_dir}"
 
     aggregator_name="chevreuse"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/snsw/devel/Chevreuse/trunk"
+    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Chevreuse/trunk"
     __aggregator_set
     aggregator_options="                                 \
         -DCMAKE_BUILD_TYPE:STRING=Release                \
