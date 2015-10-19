@@ -243,7 +243,7 @@ function aggregator ()
                 fi
                 ;;
             reinstall)
-                pkgtools__msg_notice "Rebuilding '${icompo}' aggregator"
+                pkgtools__msg_notice "Reinstalling '${icompo}' aggregator"
                 aggregator ${append_list_of_options_arg} reset     ${icompo}
                 aggregator ${append_list_of_options_arg} configure ${icompo}
                 aggregator ${append_list_of_options_arg} install   ${icompo}

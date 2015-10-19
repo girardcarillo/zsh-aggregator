@@ -78,9 +78,9 @@ function _aggregator-goto ()
     __aggregator-choose-component
 }
 
-function _aggregator-rebuild ()
+function _aggregator-reinstall ()
 {
-    [[ -n ${aggregator_describe} ]] && print "Rebuild component from scratch" && return
+    [[ -n ${aggregator_describe} ]] && print "Reinstall component from scratch" && return
     __aggregator-choose-component
 }
 
