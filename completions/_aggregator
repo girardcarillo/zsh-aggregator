@@ -163,6 +163,7 @@ function _aggregator() {
         '-i[interactive]'
         '-b[batch]'
         '-g[GUI mode]'
+        '-n[number of processors]'
         '--use-make[Using make]'
         '--use-ninja[Using ninja]'
         '*:: :->subcommand_or_options'
