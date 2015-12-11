@@ -27,6 +27,7 @@ function aggregator ()
     local with_warning=true
     local with_doc=false
     local use_clang=false
+    local nproc=0
 
     while [ -n "$1" ]; do
         local token="$1"
@@ -50,6 +51,9 @@ function aggregator ()
 	        pkgtools__ui_interactive
 	    elif [ "${opt}" = "-b" -o "${opt}" = "--batch" ]; then
 	        pkgtools__ui_batch
+	    elif [ "${opt}" = "-n" -o "${opt}" = "--number-of-processor" ]; then
+	        shift 1
+                nproc=$1
 	    elif [ "${opt}" = "--gui" ]; then
 	        pkgtools__ui_using_gui
             elif [ "${opt}" = "--with-test" ]; then
@@ -472,7 +476,7 @@ function __aggregator_get ()
                 prefix=bx
                 dir=source
                 cmd=checkout
-                invert=true
+                invert=false
                 __aggregator_externals
             )
         elif [ ${icompo} = falaise ]; then
@@ -490,7 +494,7 @@ function __aggregator_get ()
                 prefix=ch
                 dir=source
                 cmd=checkout
-                invert=true
+                invert=false
                 __aggregator_externals
             )
         fi
@@ -531,7 +535,7 @@ function __aggregator_update ()
                 prefix=bx
                 dir=source
                 cmd=update
-                invert=true
+                invert=false
                 __aggregator_externals
             )
         elif [ ${icompo} = falaise ]; then
@@ -604,12 +608,17 @@ function __aggregator_build ()
 
     # Cadfael has no install build command
     local build_options=$1
-    if [ ${aggregator_name} = cadfael ]; then
-        build_options=
-    fi
 
     if ${__aggregator_use_make}; then
-        make -j$(nproc) ${build_options}
+        if [ ${aggregator_name} = cadfael ]; then
+            make
+        else
+            if [ ${nproc} -eq 0 ]; then
+                make -j$(nproc) ${build_options}
+            else
+                make -j${nproc} ${build_options}
+            fi
+        fi
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Installation fails!"
             __pkgtools__at_function_exit
@@ -687,9 +696,11 @@ function __aggregator_set_compiler ()
     __pkgtools__at_function_enter __aggregator_set_compiler
     local cxx
     local cc
-    if $(pkgtools__has_binary ccache); then
-        cxx="${cxx}ccache "
-        cc="${cc}ccache "
+    if [[ ${aggregator_name} != cadfael ]]; then
+        if $(pkgtools__has_binary ccache); then
+            cxx="${cxx}ccache "
+            cc="${cc}ccache "
+        fi
     fi
     if ${use_clang}; then
         if $(pkgtools__has_binary clang); then
@@ -705,7 +716,7 @@ function __aggregator_set_compiler ()
         if $(pkgtools__has_binary g++); then
             pkgtools__msg_debug "Using GNU compiler"
             if [[ $(g++ --version | head -1 | awk '{print $3}') > 4.9 ]]; then
-                cxx="${cxx}g++ -std=c++11 -Wno-deprecated-declarations -fdiagnostics-color=always -Wno-unused-local-typedefs"
+                cxx="${cxx}g++ -std=c++11 -Wno-deprecated-declarations -fdiagnostics-color=always -Wno-unused-local-typedefs -ftemplate-backtrace-limit=0"
                 cc="${cc}gcc -fdiagnostics-color=always -Wno-unused-local-typedefs"
             else
                 cxx="${cxx}g++"
@@ -756,8 +767,10 @@ function __aggregator_set_cadfael
         -Dport/root+mathmore=ON                          \
         -Dport/root+opengl=ON
     "
-    unset CXX
-    unset CC
+    # unset CXX
+    # unset CC
+
+    __aggregator_set_compiler
 
     __pkgtools__at_function_exit
     return 0
