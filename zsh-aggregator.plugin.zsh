@@ -321,11 +321,7 @@ function __aggregator_setup ()
 {
     __pkgtools__at_function_enter __aggregator_setup
 
-    local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install
-
-    # Binaries
-    pkgtools__add_path_to_PATH ${install_dir}/bin
+    pkgtools__add_path_to_PATH ${aggregator_install_dir}/bin
 
     __pkgtools__at_function_exit
     return 0
@@ -335,10 +331,7 @@ function __aggregator_unsetup ()
 {
     __pkgtools__at_function_enter __aggregator_unsetup
 
-    local upname=${aggregator_name:u}
-    local install_dir=${aggregator_base_dir}/install
-
-    pkgtools__remove_path_to_PATH ${install_dir}/bin
+    pkgtools__remove_path_to_PATH ${aggregator_install_dir}/bin
 
     __pkgtools__at_function_exit
     return 0
@@ -742,35 +735,7 @@ function __aggregator_set_cadfael
     __pkgtools__at_function_enter __aggregator_set_cadfael
 
     aggregator_name="cadfael"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Cadfael/trunk"
-
-    __aggregator_set
-    aggregator_options="                                 \
-        -DCMAKE_BUILD_TYPE:STRING=Release                \
-        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
-        -DCADFAEL_VERBOSE_BUILD=ON                       \
-        -DCADFAEL_STEP_TARGETS=ON                        \
-        -Dport/patchelf=ON                               \
-        -Dport/gsl=ON                                    \
-        -Dport/clhep=ON                                  \
-        -Dport/boost=ON                                  \
-        -Dport/boost+regex=ON                            \
-        -Dport/camp=ON                                   \
-        -Dport/xerces-c=ON                               \
-        -Dport/geant4=ON                                 \
-        -Dport/geant4+gdml=ON                            \
-        -Dport/geant4+x11=ON                             \
-        -Dport/geant4+data=ON                            \
-        -Dport/root=ON                                   \
-        -Dport/root+x11=ON                               \
-        -Dport/root+asimage=ON                           \
-        -Dport/root+mathmore=ON                          \
-        -Dport/root+opengl=ON
-    "
-    # unset CXX
-    # unset CC
-
-    __aggregator_set_compiler
+    aggregator_install_dir=$SNAILWARE_PRO_DIR/brew/cadfaelbrew
 
     __pkgtools__at_function_exit
     return 0
@@ -782,7 +747,6 @@ function __aggregator_set_bayeux
 
     # Retrieve Cadfael information
     __aggregator_set_cadfael
-    __aggregator_set
     local cadfael_install_dir=${aggregator_install_dir}
     pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
 
@@ -795,21 +759,21 @@ function __aggregator_set_bayeux
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir}
     "
     if ${with_warning}; then
-        aggregator_options+="-DBayeux_FORCE_CXX_ALL_WARNINGS=ON "
+        aggregator_options+="-DBAYEUX_FORCE_CXX_ALL_WARNINGS=ON "
     else
-        aggregator_options+="-DBayeux_FORCE_CXX_ALL_WARNINGS=OFF "
+        aggregator_options+="-DBAYEUX_FORCE_CXX_ALL_WARNINGS=OFF "
     fi
 
     if ${with_doc}; then
-        aggregator_options+="-DBayeux_BUILD_DOCS=ON "
+        aggregator_options+="-DBAYEUX_WITH_DOCS=ON "
     else
-        aggregator_options+="-DBayeux_BUILD_DOCS=OFF "
+        aggregator_options+="-DBAYEUX_WITH_DOCS=OFF "
     fi
 
     if ${with_test}; then
-        aggregator_options+="-DBayeux_ENABLE_TESTING=ON "
+        aggregator_options+="-DBAYEUX_ENABLE_TESTING=ON "
     else
-        aggregator_options+="-DBayeux_ENABLE_TESTING=OFF "
+        aggregator_options+="-DBAYEUX_ENABLE_TESTING=OFF "
     fi
 
     __aggregator_set_compiler
@@ -824,11 +788,9 @@ function __aggregator_set_falaise
 
     # Retrieve Cadfael information
     __aggregator_set_cadfael
-    __aggregator_set
     local cadfael_install_dir=${aggregator_install_dir}
     pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
     __aggregator_set_bayeux
-    __aggregator_set
     local bayeux_install_dir=${aggregator_install_dir}
     pkgtools__msg_devel "bayeux_install_dir=${bayeux_install_dir}"
 
