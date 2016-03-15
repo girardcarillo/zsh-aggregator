@@ -709,7 +709,7 @@ function __aggregator_set_compiler ()
         if $(pkgtools__has_binary g++); then
             pkgtools__msg_debug "Using GNU compiler"
             if [[ $(g++ --version | head -1 | awk '{print $3}') > 4.9 ]]; then
-                cxx="${cxx}g++ -std=c++11 -Wno-deprecated-declarations -fdiagnostics-color=always -Wno-unused-local-typedefs -ftemplate-backtrace-limit=0"
+                cxx="${cxx}g++ -Wno-deprecated-declarations -fdiagnostics-color=always -Wno-unused-local-typedefs -ftemplate-backtrace-limit=0"
                 cc="${cc}gcc -fdiagnostics-color=always -Wno-unused-local-typedefs"
             else
                 cxx="${cxx}g++"
@@ -756,12 +756,13 @@ function __aggregator_set_bayeux
     aggregator_options="                                 \
         -DCMAKE_BUILD_TYPE:STRING=Release                \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
-        -DCMAKE_PREFIX_PATH=${cadfael_install_dir}
+        -DCMAKE_PREFIX_PATH=${cadfael_install_dir}       \
+        -DBAYEUX_CXX_STANDARD=14
     "
     if ${with_warning}; then
-        aggregator_options+="-DBAYEUX_FORCE_CXX_ALL_WARNINGS=ON "
+        aggregator_options+="-DBAYEUX_COMPILER_ERROR_ON_WARNING=ON "
     else
-        aggregator_options+="-DBAYEUX_FORCE_CXX_ALL_WARNINGS=OFF "
+        aggregator_options+="-DBAYEUX_COMPILER_ERROR_ON_WARNING=OFF "
     fi
 
     if ${with_doc}; then
@@ -801,18 +802,23 @@ function __aggregator_set_falaise
         -DCMAKE_BUILD_TYPE:STRING=Release                                \
         -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir}                 \
         -DCMAKE_PREFIX_PATH=${cadfael_install_dir};${bayeux_install_dir} \
-        -DFalaise_USE_SYSTEM_BAYEUX=ON                                   \
-        -DFalaise_BUILD_DEVELOPER_TOOLS=ON
+        -DFALAISE_WITH_DEVELOPER_TOOLS=ON                                \
+        -DFALAISE_CXX_STANDARD=14
     "
-    if ${with_doc}; then
-        aggregator_options+="-DFalaise_BUILD_DOCS=ON "
+    if ${with_warning}; then
+        aggregator_options+="-DFALAISE_COMPILER_ERROR_ON_WARNING=ON "
     else
-        aggregator_options+="-DFalaise_BUILD_DOCS=OFF "
+        aggregator_options+="-DFALAISE_COMPILER_ERROR_ON_WARNING=OFF "
+    fi
+    if ${with_doc}; then
+        aggregator_options+="-DFALAISE_WITH_DOCS=ON "
+    else
+        aggregator_options+="-DFALAISE_WITH_DOCS=OFF "
     fi
     if ${with_test}; then
-        aggregator_options+="-DFalaise_ENABLE_TESTING=ON "
+        aggregator_options+="-DFALAISE_ENABLE_TESTING=ON "
     else
-        aggregator_options+="-DFalaise_ENABLE_TESTING=OFF "
+        aggregator_options+="-DFALAISE_ENABLE_TESTING=OFF "
     fi
 
     __aggregator_set_compiler
