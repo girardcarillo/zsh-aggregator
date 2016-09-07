@@ -295,7 +295,7 @@ function __aggregator_environment ()
             nemo_base_dir_tmp="/data/workdir/nemo/"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             ;;
-        ccige*|ccage*)
+        ccige*|ccage*|cca*)
             nemo_base_dir_tmp="/sps/nemo/scratch/${USER}/workdir"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             ;;
@@ -735,7 +735,7 @@ function __aggregator_set_cadfael
     __pkgtools__at_function_enter __aggregator_set_cadfael
 
     aggregator_name="cadfael"
-    aggregator_install_dir=$SNAILWARE_PRO_DIR/brew/cadfaelbrew
+    aggregator_install_dir=$SNAILWARE_PRO_DIR/brew
 
     __pkgtools__at_function_exit
     return 0
