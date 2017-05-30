@@ -8,7 +8,7 @@
 # Status: not intended to be distributed yet
 
 # Add completion
-fpath=(${ADOTDIR}/repos/https-COLON--SLASH--SLASH-github.com-SLASH-xgarrido-SLASH-zsh-aggregator.git/completions $fpath)
+fpath=(${ADOTDIR}/bundles/xgarrido/zsh-aggregator/completions $fpath)
 
 # Aggregator bundles
 typeset -ga __aggregator_bundles
@@ -266,7 +266,7 @@ function aggregator ()
         popd > /dev/null 2>&1
     done
 
-    unset aggregator_install_dir  aggregator_options      aggregator_svn_path
+    unset aggregator_install_dir  aggregator_options      aggregator_git_path
     unset aggregator_base_dir     aggregator_logfile      aggregator_repo_dir
     unset aggregator_build_dir    aggregator_name
     __pkgtools__default_values
@@ -398,109 +398,20 @@ function __aggregator_set ()
     return 0
 }
 
-function __aggregator_externals ()
-{
-    __pkgtools__at_function_enter __aggregator_externals
-    cd $dir
-    typeset -A assoc_array
-    assoc_array=( $(git svn propget svn:externals) )
-    for ipkg in "${(@k)assoc_array}"; do
-        pkg=$ipkg
-        http=$assoc_array[$ipkg]
-        # Tweak for Bayeux
-        if $invert; then
-            tmp=$pkg
-            pkg=$http
-            http=$tmp
-        fi
-        branch=${http##*/}
-        _pkg=${pkg/${prefix}/}
-        _http=${http%${_pkg}*}${_pkg}
-        tmp=${_http/\^/https:\/\/nemo.lpc-caen.in2p3.fr\/svn}
-        _http=$tmp
-        pkgtools__msg_devel "pkg=$pkg"
-        pkgtools__msg_devel "pkg=$_pkg"
-        pkgtools__msg_devel "http=$_http"
-        pkgtools__msg_devel "branch=$branch"
-        (
-            mkdir -p $pkg && cd $pkg
-            if [ $cmd = checkout ]; then
-                pkgtools__msg_notice "Getting $_pkg from $_http"
-                go-svn2git -username ${USER} -verbose ${_http}
-                if $(pkgtools__last_command_fails); then
-                    pkgtools__msg_error "Getting $_pkg fails!"
-                    __pkgtools__at_function_exit
-                    return 1
-                fi
-                if [ $branch != trunk ]; then
-                    pkgtools__msg_notice "Checking out $branch branch"
-                    git checkout $branch
-                fi
-            elif [ $cmd = update ]; then
-                pkgtools__msg_notice "Updating $_pkg"
-                git svn fetch && git svn rebase
-                if $(pkgtools__last_command_fails); then
-                    pkgtools__msg_error "Updating $_pkg fails!"
-                    __pkgtools__at_function_exit
-                    return 1
-                fi
-            fi
-        )
-    done
-    __pkgtools__at_function_exit
-    return 0
-}
-
 function __aggregator_get ()
 {
     __pkgtools__at_function_enter __aggregator_get
 
-    if $(pkgtools__has_binary go-svn2git); then
-        pkgtools__msg_debug "Machine has go-svn2git"
-        go-svn2git -username ${USER} -verbose ${aggregator_svn_path/trunk/}
+    if $(pkgtools__has_binary git); then
+        pkgtools__msg_debug "Machine has git support"
+        git clone ${aggregator_git_path} .
         if $(pkgtools__last_command_fails); then
-            pkgtools__msg_error "Checking out fails!"
-            __pkgtools__at_function_exit
-            return 1
-        fi
-        if [ ${icompo} = bayeux ]; then
-            pkgtools__msg_debug "Component ${icompo}"
-            (
-                prefix=bx
-                dir=source
-                cmd=checkout
-                invert=false
-                __aggregator_externals
-            )
-        elif [ ${icompo} = falaise ]; then
-            pkgtools__msg_debug "Component ${icompo}"
-            (
-                prefix=
-                dir=${aggregator_repo_dir}/modules/CAT
-                cmd=checkout
-                invert=false
-                __aggregator_externals
-            )
-        elif [ ${icompo} = chevreuse ]; then
-            pkgtools__msg_debug "Component ${icompo}"
-            (
-                prefix=ch
-                dir=source
-                cmd=checkout
-                invert=false
-                __aggregator_externals
-            )
-        fi
-    elif $(pkgtools__has_binary svn); then
-        pkgtools__msg_debug "Machine has subversion"
-        svn checkout ${aggregator_svn_path} .
-        if $(pkgtools__last_command_fails); then
-            pkgtools__msg_error "Checking out fails!"
+            pkgtools__msg_error "Cloning out fails!"
             __pkgtools__at_function_exit
             return 1
         fi
     else
-        pkgtools__msg_warning "Machine has no subversion installed"
+        pkgtools__msg_warning "Machine has no git installed"
         __pkgtools__at_function_exit
         return 1
     fi
@@ -513,53 +424,16 @@ function __aggregator_update ()
 {
     __pkgtools__at_function_enter __aggregator_update
 
-    if $(pkgtools__has_binary go-svn2git); then
-        pkgtools__msg_debug "Machine has go-svn2git"
-        git svn fetch
-        git svn rebase
-        if $(pkgtools__last_command_fails); then
-            pkgtools__msg_error "Updating fails!"
-            __pkgtools__at_function_exit
-            return 1
-        fi
-        if [ ${icompo} = bayeux ]; then
-            pkgtools__msg_debug "Component ${icompo}"
-            (
-                prefix=bx
-                dir=source
-                cmd=update
-                invert=false
-                __aggregator_externals
-            )
-        elif [ ${icompo} = falaise ]; then
-            pkgtools__msg_debug "Component ${icompo}"
-            (
-                prefix=
-                dir=${aggregator_repo_dir}/modules/CAT
-                cmd=update
-                invert=false
-                __aggregator_externals
-            )
-        elif [ ${icompo} = chevreuse ]; then
-            pkgtools__msg_debug "Component ${icompo}"
-            (
-                prefix=ch
-                dir=source
-                cmd=update
-                invert=false
-                __aggregator_externals
-            )
-        fi
-    elif $(pkgtools__has_binary svn); then
-        pkgtools__msg_debug "Machine has subversion"
-        svn update
+    if $(pkgtools__has_binary git); then
+        pkgtools__msg_debug "Machine has git support"
+        git pull
         if $(pkgtools__last_command_fails); then
             pkgtools__msg_error "Updating fails!"
             __pkgtools__at_function_exit
             return 1
         fi
     else
-        pkgtools__msg_warning "Machine has no subversion installed"
+        pkgtools__msg_warning "Machine has no git installed"
         __pkgtools__at_function_exit
         return 1
     fi
@@ -674,8 +548,8 @@ function __aggregator_dump ()
 
     pkgtools__msg_notice "Dump aggregator"
     pkgtools__msg_notice " |- name           : ${aggregator_name}"
-    pkgtools__msg_notice " |- repository     : ${aggregator_svn_path}"
-    pkgtools__msg_notice " |- options        : ${aggregator_options}"
+    pkgtools__msg_notice " |- repository     : ${aggregator_git_path}"
+    pkgtools__msg_notice " |- options        : $(echo ${aggregator_options} | sed -e 's/\s\+/\n/g' | sed -e '/^\s*$/d')"
     pkgtools__msg_notice " |- config version : ${aggregator_config_version}"
     pkgtools__msg_notice " |- install dir.   : ${aggregator_install_dir}"
     pkgtools__msg_notice " \`- build dir.    : ${aggregator_build_dir}"
@@ -751,7 +625,7 @@ function __aggregator_set_bayeux
     pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
 
     aggregator_name="bayeux"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Bayeux/trunk"
+    aggregator_git_path="git@github.com:BxCppDev/Bayeux.git"
     __aggregator_set
     aggregator_options="                                 \
         -DCMAKE_BUILD_TYPE:STRING=Release                \
@@ -796,7 +670,7 @@ function __aggregator_set_falaise
     pkgtools__msg_devel "bayeux_install_dir=${bayeux_install_dir}"
 
     aggregator_name="falaise"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Falaise/trunk"
+    aggregator_git_path="git@github.com:SuperNEMO-DBD-France/Falaise.git"
     __aggregator_set
     aggregator_options="                                                 \
         -DCMAKE_BUILD_TYPE:STRING=Release                                \
@@ -819,47 +693,6 @@ function __aggregator_set_falaise
         aggregator_options+="-DFALAISE_ENABLE_TESTING=ON "
     else
         aggregator_options+="-DFALAISE_ENABLE_TESTING=OFF "
-    fi
-
-    __aggregator_set_compiler
-
-    __pkgtools__at_function_exit
-    return 0
-}
-
-function __aggregator_set_chevreuse
-{
-    __pkgtools__at_function_enter __aggregator_set_chevreuse
-
-    # Retrieve Cadfael information
-    # __aggregator_set_cadfael
-    # __aggregator_set
-    # local cadfael_install_dir=${aggregator_install_dir}
-    # pkgtools__msg_devel "cadfael_install_dir=${cadfael_install_dir}"
-    __aggregator_set_bayeux
-    __aggregator_set
-    local bayeux_install_dir=${aggregator_install_dir}
-    pkgtools__msg_devel "bayeux_install_dir=${bayeux_install_dir}"
-
-    aggregator_name="chevreuse"
-    aggregator_svn_path="https://nemo.lpc-caen.in2p3.fr/svn/Chevreuse/trunk"
-    __aggregator_set
-    aggregator_options="                                 \
-        -DCMAKE_BUILD_TYPE:STRING=Release                \
-        -DCMAKE_INSTALL_PREFIX=${aggregator_install_dir} \
-        -DCMAKE_PREFIX_PATH=${bayeux_install_dir}        \
-        -DChevreuse_USE_SYSTEM_BAYEUX=ON                 \
-        -DChevreuse_BUILD_DEVELOPER_TOOLS=ON
-    "
-    if ${with_doc}; then
-        aggregator_options+="-DChevreuse_BUILD_DOCS=ON "
-    else
-        aggregator_options+="-DChevreuse_BUILD_DOCS=OFF "
-    fi
-    if ${with_test}; then
-        aggregator_options+="-DChevreuse_ENABLE_TESTING=ON "
-    else
-        aggregator_options+="-DChevreuse_ENABLE_TESTING=OFF "
     fi
 
     __aggregator_set_compiler
