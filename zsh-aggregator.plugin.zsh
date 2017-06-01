@@ -583,7 +583,7 @@ function __aggregator_set_compiler ()
         if $(pkgtools__has_binary g++); then
             pkgtools__msg_debug "Using GNU compiler"
             if [[ $(g++ --version | head -1 | awk '{print $3}') > 4.9 ]]; then
-                cxx="${cxx}g++ -Wno-deprecated-declarations -fdiagnostics-color=always -Wno-unused-local-typedefs -ftemplate-backtrace-limit=0"
+                cxx="${cxx}g++ -Wno-deprecated-declarations -fdiagnostics-color=always -Wno-unused-local-typedefs -ftemplate-backtrace-limit=0 -Wno-noexcept-type"
                 cc="${cc}gcc -fdiagnostics-color=always -Wno-unused-local-typedefs"
             else
                 cxx="${cxx}g++"
