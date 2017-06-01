@@ -12,7 +12,7 @@ fpath=(${ADOTDIR}/bundles/xgarrido/zsh-aggregator/completions $fpath)
 
 # Aggregator bundles
 typeset -ga __aggregator_bundles
-__aggregator_bundles=(cadfael bayeux falaise chevreuse)
+__aggregator_bundles=(cadfael bayeux falaise)
 typeset -g __aggregator_use_make=false
 
 function aggregator ()
