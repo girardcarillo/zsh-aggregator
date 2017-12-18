@@ -303,6 +303,9 @@ function __aggregator_environment ()
             nemo_base_dir_tmp="/exp/nemo/${USER}/workdir"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
             ;;
+        girardcarillo-Latitude-7380)
+            nemo_base_dir_tmp="/home/${USER}/Workdir"
+            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/snware"
     esac
 
     if env | grep -q "^SNAILWARE_BASE_DIR="; then
@@ -610,7 +613,7 @@ function __aggregator_set_cadfael
     pkgtools::at_function_enter __aggregator_set_cadfael
 
     aggregator_name="cadfael"
-    aggregator_install_dir=$SNAILWARE_PRO_DIR/brew
+    aggregator_install_dir=$SNAILWARE_PRO_DIR/cadfaelbrew
 
     pkgtools::at_function_exit
     return 0
