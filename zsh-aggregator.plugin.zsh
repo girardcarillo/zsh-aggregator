@@ -17,8 +17,8 @@ typeset -g __aggregator_use_make=false
 
 function aggregator ()
 {
-    __pkgtools::default_values
-    __pkgtools::at_function_enter aggregator
+    pkgtools::default_values
+    pkgtools::at_function_enter aggregator
 
     local mode
     local append_list_of_options_arg
@@ -126,7 +126,7 @@ function aggregator ()
     # Setting environment
     if [ ${mode} = environment ]; then
         __aggregator_environment
-        __pkgtools::at_function_exit
+        pkgtools::at_function_exit
         return 0
     else
         if [ ! -n "${AGGREGATOR_SETUP_DONE}" ];then
@@ -145,7 +145,7 @@ function aggregator ()
 
         if [[ ${__aggregator_bundles[(i)${icompo}]} -gt ${#__aggregator_bundles} ]]; then
             pkgtools::msg_error "Aggregator '${icompo}' does not exist!"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
 
@@ -167,7 +167,7 @@ function aggregator ()
             pkgtools::msg_error "Repository of '${icompo}' does not exist!"
             continue
         elif [ ${mode} = goto ]; then
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 0
         fi
         unset is_found
@@ -269,18 +269,18 @@ function aggregator ()
     unset aggregator_install_dir  aggregator_options      aggregator_git_path
     unset aggregator_base_dir     aggregator_logfile      aggregator_repo_dir
     unset aggregator_build_dir    aggregator_name
-    __pkgtools::default_values
-    __pkgtools::at_function_exit
+    pkgtools::default_values
+    pkgtools::at_function_exit
     return 0
 
 }
 
 function __aggregator_environment ()
 {
-    __pkgtools::at_function_enter __aggregator_environment
+    pkgtools::at_function_enter __aggregator_environment
 
     if [ -n "${AGGREGATOR_SETUP_DONE}" ]; then
-        __pkgtools::at_function_exit
+        pkgtools::at_function_exit
         return 0
     fi
     export AGGREGATOR_SETUP_DONE=1
@@ -313,33 +313,33 @@ function __aggregator_environment ()
         pkgtools::set_variable SNAILWARE_PRO_DIR  "${nemo_pro_dir_tmp}"
     fi
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_setup ()
 {
-    __pkgtools::at_function_enter __aggregator_setup
+    pkgtools::at_function_enter __aggregator_setup
 
     pkgtools::add_path_to_PATH ${aggregator_install_dir}/bin
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_unsetup ()
 {
-    __pkgtools::at_function_enter __aggregator_unsetup
+    pkgtools::at_function_enter __aggregator_unsetup
 
     pkgtools::remove_path_to_PATH ${aggregator_install_dir}/bin
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_set ()
 {
-    __pkgtools::at_function_enter __aggregator_set
+    pkgtools::at_function_enter __aggregator_set
 
     __aggregator_environment
 
@@ -394,57 +394,57 @@ function __aggregator_set ()
         fi
     fi
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_get ()
 {
-    __pkgtools::at_function_enter __aggregator_get
+    pkgtools::at_function_enter __aggregator_get
 
     if $(pkgtools::has_binary git); then
         pkgtools::msg_debug "Machine has git support"
         git clone ${aggregator_git_path} .
         if $(pkgtools::last_command_fails); then
             pkgtools::msg_error "Cloning out fails!"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
     else
         pkgtools::msg_warning "Machine has no git installed"
-        __pkgtools::at_function_exit
+        pkgtools::at_function_exit
         return 1
     fi
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_update ()
 {
-    __pkgtools::at_function_enter __aggregator_update
+    pkgtools::at_function_enter __aggregator_update
 
     if $(pkgtools::has_binary git); then
         pkgtools::msg_debug "Machine has git support"
         git pull
         if $(pkgtools::last_command_fails); then
             pkgtools::msg_error "Updating fails!"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
     else
         pkgtools::msg_warning "Machine has no git installed"
-        __pkgtools::at_function_exit
+        pkgtools::at_function_exit
         return 1
     fi
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_configure ()
 {
-    __pkgtools::at_function_enter __aggregator_configure
+    pkgtools::at_function_enter __aggregator_configure
 
     if ! ${__aggregator_use_make}; then
         aggregator_options+="-G Ninja -DCMAKE_MAKE_PROGRAM=$(pkgtools::get_binary_path ninja)"
@@ -458,17 +458,17 @@ function __aggregator_configure ()
         ${aggregator_repo_dir}
     if $(pkgtools::last_command_fails); then
         pkgtools::msg_error "Configuration fails!"
-        __pkgtools::at_function_exit
+        pkgtools::at_function_exit
         return 1
     fi
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_build ()
 {
-    __pkgtools::at_function_enter __aggregator_build
+    pkgtools::at_function_enter __aggregator_build
 
     pkgtools::msg_devel "use make=${__aggregator_use_make}"
     cd ${aggregator_build_dir}
@@ -488,25 +488,25 @@ function __aggregator_build ()
         fi
         if $(pkgtools::last_command_fails); then
             pkgtools::msg_error "Installation fails!"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
     else
         ninja ${build_options}
         if $(pkgtools::last_command_fails); then
             pkgtools::msg_error "Installation fails!"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
     fi
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_test ()
 {
-    __pkgtools::at_function_enter __aggregator_test
+    pkgtools::at_function_enter __aggregator_test
 
     pkgtools::msg_devel "aggregator build dir=${aggregator_build_dir}"
     cd ${aggregator_build_dir}
@@ -515,36 +515,36 @@ function __aggregator_test ()
         make test
         if $(pkgtools::last_command_fails); then
             pkgtools::msg_error "Test fails!"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
     else
         ninja test
         if $(pkgtools::last_command_fails); then
             pkgtools::msg_error "Test fails!"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
     fi
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_remove ()
 {
-    __pkgtools::at_function_enter __aggregator_remove
+    pkgtools::at_function_enter __aggregator_remove
 
     rm -rf ${aggregator_install_dir}
     rm -rf ${aggregator_build_dir}
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_dump ()
 {
-    __pkgtools::at_function_enter __aggregator_dump
+    pkgtools::at_function_enter __aggregator_dump
 
     pkgtools::msg_notice "Dump aggregator"
     pkgtools::msg_notice " |- name           : ${aggregator_name}"
@@ -554,13 +554,13 @@ function __aggregator_dump ()
     pkgtools::msg_notice " |- install dir.   : ${aggregator_install_dir}"
     pkgtools::msg_notice " \`- build dir.    : ${aggregator_build_dir}"
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_set_compiler ()
 {
-    __pkgtools::at_function_enter __aggregator_set_compiler
+    pkgtools::at_function_enter __aggregator_set_compiler
     local cxx
     local cc
     if [[ ${aggregator_name} != cadfael ]]; then
@@ -576,7 +576,7 @@ function __aggregator_set_compiler ()
             cc="${cc}clang -fcolor-diagnostics -Qunused-arguments -D__extern_always_inline=inline"
         else
             pkgtools::msg_error "Clang compiler is not installed !"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
     else
@@ -592,7 +592,7 @@ function __aggregator_set_compiler ()
             fi
         else
             pkgtools::msg_error "GNU compiler is not installed !"
-            __pkgtools::at_function_exit
+            pkgtools::at_function_exit
             return 1
         fi
     fi
@@ -601,24 +601,24 @@ function __aggregator_set_compiler ()
 
     export CXX=$cxx
     export CC=$cc
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_set_cadfael
 {
-    __pkgtools::at_function_enter __aggregator_set_cadfael
+    pkgtools::at_function_enter __aggregator_set_cadfael
 
     aggregator_name="cadfael"
     aggregator_install_dir=$SNAILWARE_PRO_DIR/brew
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_set_bayeux
 {
-    __pkgtools::at_function_enter __aggregator_set_bayeux
+    pkgtools::at_function_enter __aggregator_set_bayeux
 
     # Retrieve Cadfael information
     __aggregator_set_cadfael
@@ -654,13 +654,13 @@ function __aggregator_set_bayeux
 
     __aggregator_set_compiler
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
 function __aggregator_set_falaise
 {
-    __pkgtools::at_function_enter __aggregator_set_falaise
+    pkgtools::at_function_enter __aggregator_set_falaise
 
     # Retrieve Cadfael information
     __aggregator_set_cadfael
@@ -698,7 +698,7 @@ function __aggregator_set_falaise
 
     __aggregator_set_compiler
 
-    __pkgtools::at_function_exit
+    pkgtools::at_function_exit
     return 0
 }
 
