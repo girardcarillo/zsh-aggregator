@@ -287,14 +287,6 @@ function __aggregator_environment ()
 
     # Take care of running machine
     case "${HOSTNAME}" in
-        garrido-laptop)
-            nemo_base_dir_tmp="/home/${USER}/Workdir/NEMO"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
-            ;;
-        pc-91089)
-            nemo_base_dir_tmp="/data/workdir/nemo/"
-            nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
-            ;;
         ccige*|ccage*|cca*)
             nemo_base_dir_tmp="/sps/nemo/scratch/${USER}/workdir"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/supernemo/snware"
@@ -306,6 +298,7 @@ function __aggregator_environment ()
         girardcarillo-Latitude-7380)
             nemo_base_dir_tmp="/home/${USER}/Workdir"
             nemo_pro_dir_tmp="${nemo_base_dir_tmp}/snware"
+            ;;
     esac
 
     if env | grep -q "^SNAILWARE_BASE_DIR="; then
